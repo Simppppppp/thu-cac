@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600&family=Merriweather:wght@400;700&family=Noto+Serif:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600&family=Merriweather:wght@400;700&family=Noto+Serif:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap">
 <style>
 /* Layout: one reading column (max 880px) on a paper-toned ground; header and chapter bar are full-width bands; tools float bottom-right. */
 :root{
@@ -14,7 +14,7 @@
   --card:color-mix(in srgb, var(--rb) 96%, var(--rf));
   --head:color-mix(in srgb, var(--rb) 70%, #ffffff);
   --font-ui:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
-  --font-title:"Noto Serif",Georgia,"Times New Roman",serif;
+  --font-title:"Noto Serif","Times New Roman",Georgia,serif;
   --fs:19px; --lh:1.7; --rfont:"Literata",Georgia,serif; --align:left; --indent:0em; --shadow:none;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--rb:#1d1b17; --rf:#d8d1c1; --link:#8fd47a; --danger:#ef6b72; --head:color-mix(in srgb, var(--rb) 92%, #ffffff); color-scheme:dark}}
@@ -45,28 +45,219 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 .banner.info{background:var(--band)}
 .banner .linkbtn{margin-left:8px}
 
-/* ---------- library ---------- */
-.libhead{background:var(--head); border-bottom:1px solid var(--line); padding-block:28px 22px}
-.brand{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
-.brand h1{font-family:var(--font-title); font-size:34px; margin:0; letter-spacing:.01em}
-.brand .seal{font-family:var(--font-title); font-size:15px; color:var(--rb); background:var(--danger); border-radius:4px; padding:2px 6px; transform:translateY(-4px)}
-.brand p{margin:0; color:var(--muted)}
-.toolbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:18px}
-.dictstat{margin-top:12px; font-size:13px; color:var(--muted)}
-.libbody{padding-block:24px 120px}
-.books{display:grid; gap:12px}
-.book{display:grid; grid-template-columns:1fr auto; gap:6px 16px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px}
-.book h2{font-family:var(--font-title); font-size:20px; margin:0; line-height:1.3}
-.book .meta{color:var(--muted); font-size:13px}
-.book .acts{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end}
-@media (max-width:600px){.book{grid-template-columns:1fr}.book .acts{justify-content:flex-start}}
-.empty{border:1px dashed color-mix(in srgb, var(--rf) 30%, transparent); border-radius:12px; padding:28px 24px; display:grid; gap:14px}
+/* ---------- giao diện tối cố định cho tủ truyện + trang truyện (không theo cài đặt đọc, không theo máy) ---------- */
+:root{
+  --dk-bg:#0e0e10; --dk-surface:#17171a; --dk-surface2:#202024; --dk-line:rgba(255,255,255,.08); --dk-line2:rgba(255,255,255,.16);
+  --dk-text:#ededef; --dk-muted:#a3a3aa; --dk-dim:#83838b; --dk-accent:#ff6b3d; --dk-accent-hi:#ff8862; --dk-on-accent:#1d0c05;
+  --font-cover:"Playfair Display","Noto Serif","Times New Roman",serif;   /* không dùng Georgia: thiếu chữ có dấu tiếng Việt */
+  --font-zh:"Noto Serif SC","Noto Serif CJK SC","Source Han Serif SC","Songti SC","STSong","SimSun",serif;
+}
+:root[data-view="lib"],:root[data-view="toc"]{color-scheme:dark}
+:root[data-view="lib"] body,:root[data-view="toc"] body{background:var(--dk-bg); color:var(--dk-text)}
+/* Khung hỏi, thông báo mở từ hai màn này cũng dùng màu tối */
+.dk,:root[data-view="lib"] .modal,:root[data-view="toc"] .modal,:root[data-view="lib"] .banner,:root[data-view="toc"] .banner{
+  --rb:var(--dk-surface); --rf:var(--dk-text); --link:var(--dk-accent); --danger:#ff7b7b; --muted:var(--dk-muted); --line:var(--dk-line);
+  --band:var(--dk-surface2); --card:var(--dk-surface2); --head:var(--dk-surface); color-scheme:dark}
+.dk{--rb:var(--dk-bg); background:var(--dk-bg); color:var(--dk-text); min-height:100vh}
+.dk :focus-visible{outline:2px solid var(--dk-accent); outline-offset:2px}
+.obtn,.dbtn{display:inline-flex; align-items:center; justify-content:center; gap:7px; border-radius:999px; padding:9px 18px; font-size:14px; font-weight:600; line-height:1.2; white-space:nowrap}
+.obtn{background:var(--dk-accent); color:var(--dk-on-accent); border:1px solid transparent}
+.obtn:hover{background:var(--dk-accent-hi)}
+.dbtn{background:transparent; color:var(--dk-text); border:1px solid var(--dk-line2); font-weight:500}
+.dbtn:hover{background:var(--dk-surface2); border-color:rgba(255,255,255,.26)}
+.dbtn.sm{padding:7px 13px; font-size:13px}
+.dbtn.warnb{color:#ff9a9a; border-color:rgba(255,120,120,.38)}
+.dbtn.warnb:hover{background:rgba(255,90,90,.1)}
+.obtn:disabled,.dbtn:disabled{opacity:.5; cursor:not-allowed}
+.obtn svg,.dbtn svg{width:17px; height:17px}
+.vh{position:absolute !important; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+
+/* thanh đầu trang */
+.dkbar{border-bottom:1px solid var(--dk-line); position:relative; z-index:5}
+.dkwrap{max-width:1600px; margin:0 auto; display:flex; align-items:center; gap:10px 14px; min-height:68px; padding-block:12px}
+.dkbrand{display:flex; align-items:center; gap:10px; margin-right:auto; min-width:0}
+.dkbrand h1,.dkbrand b{font-family:var(--font-title); font-size:24px; font-weight:700; margin:0; letter-spacing:.01em; white-space:nowrap}
+.dkseal{flex:none; width:32px; height:32px; border-radius:7px; background:#b8323c; color:#fbe8cf; display:grid; place-items:center; font-family:var(--font-zh); font-size:19px; line-height:1; box-shadow:inset 0 0 0 2px rgba(251,232,207,.32)}
+.dktag{color:var(--dk-muted); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; margin-left:4px}
+.dkacts{display:flex; align-items:center; gap:8px}
+.libtools{display:flex; gap:8px}
+#bMore{display:none}
+.dback{background:none; border:0; color:var(--dk-text); display:inline-flex; align-items:center; gap:4px; font-weight:600; font-size:15px; padding:6px 8px 6px 0; margin-right:auto}
+.dback svg{width:19px; height:19px; stroke-width:2.4}
+.dback:hover{color:var(--dk-accent-hi)}
+.dkbrand.sm{margin-right:0}
+.dkbrand.sm b{font-size:18px}
+.dkbrand.sm .dkseal{width:26px; height:26px; font-size:15px; border-radius:6px}
+@media (max-width:860px){
+  .dktag{display:none}
+  #bMore{display:inline-flex}
+  .libtools{display:none; position:absolute; right:max(16px, env(safe-area-inset-right, 0px)); top:calc(100% - 6px); flex-direction:column; align-items:stretch; gap:2px; background:var(--dk-surface2); border:1px solid var(--dk-line2); border-radius:12px; padding:6px; min-width:210px; box-shadow:0 14px 34px rgba(0,0,0,.6); z-index:20}
+  .libtools.open{display:flex}
+  .libtools .dbtn{border:0; border-radius:8px; justify-content:flex-start; padding:12px 14px; font-size:15px}
+}
+@media (max-width:420px){
+  .dkbrand h1{font-size:20px}
+  .dkseal{width:28px; height:28px; font-size:16px}
+  #bMore{padding:9px 11px}
+  #bMore .lbl{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+  .dkacts .obtn{padding:9px 14px}
+}
+
+/* ---------- tủ truyện: lưới bìa ---------- */
+.libbody{padding-block:2px 120px}
+.libbody > .dkwrap{display:block; min-height:0; padding-block:0}
+.dictstat{font-size:13px; color:var(--dk-dim); padding-top:12px}
+#libEmpty{margin-top:18px}
+.secth + .grid:empty + #libEmpty{margin-top:0}
+.secth{display:flex; align-items:baseline; gap:10px; font-size:21px; font-weight:700; margin:22px 0 16px}
+.secth .cnt{font-size:14px; font-weight:500; color:var(--dk-muted)}
+.grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:30px 22px}
+@media (max-width:600px){.grid{grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:22px 14px}}
+.tile{display:flex; flex-direction:column; gap:6px; min-width:0; background:none; border:0; padding:0; text-align:left; color:var(--dk-text); border-radius:10px}
+.cvbox{position:relative; display:block; border-radius:10px; overflow:hidden; box-shadow:0 10px 24px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06); transition:transform .18s ease, box-shadow .18s ease}
+.tile:hover .cvbox{transform:translateY(-3px); box-shadow:0 16px 30px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.14)}
+.tile:hover .tt{color:var(--dk-accent-hi)}
+.tile .tt{display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; font-weight:600; font-size:16px; line-height:1.4; margin-top:6px}
+.tile .ta{font-size:14px; color:var(--dk-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.cvbox .pg{position:absolute; left:0; right:0; bottom:0; height:4px; background:rgba(0,0,0,.6)}
+.cvbox .pg i{display:block; height:100%; background:var(--dk-accent)}
+@media (max-width:600px){.tile .tt{font-size:15px}.tile .ta{font-size:13px}}
+@media (prefers-reduced-motion: reduce){.cvbox{transition:none}.tile:hover .cvbox{transform:none}}
+.empty{border:1px dashed color-mix(in srgb, var(--rf) 30%, transparent); border-radius:14px; padding:28px 24px; display:grid; gap:14px; background:var(--dk-surface); max-width:760px}
 .empty h2{font-family:var(--font-title); margin:0; font-size:22px}
-.empty ol{margin:0; padding-left:20px; display:grid; gap:6px}
+.empty ol{margin:0; padding-left:20px; display:grid; gap:6px; color:#d4d4d9}
+.empty .row{gap:10px}
+
+/* ---------- bìa tự tạo (chỉ HTML/CSS): bảng màu và hoa văn chọn theo mã băm của id ---------- */
+.cover{position:relative; display:block; aspect-ratio:2/3; width:100%; overflow:hidden; container-type:inline-size; isolation:isolate; background:linear-gradient(155deg, var(--c1), var(--c2)); color:var(--ci); font-family:var(--font-ui); line-height:1.2}
+.cover::after{content:""; position:absolute; inset:0; z-index:-1; background:radial-gradient(110% 70% at 25% 0%, rgba(255,255,255,.14), transparent 60%), radial-gradient(130% 80% at 50% 118%, rgba(0,0,0,.55), transparent 66%)}
+@supports (mask-size:auto) or (-webkit-mask-size:auto){
+  .cover::before{content:""; position:absolute; inset:0; z-index:-2; background-color:var(--ca); opacity:var(--po, .15); -webkit-mask:var(--pm); mask:var(--pm)}
+}
+.cv-big{position:absolute; left:-7cqw; bottom:20cqw; z-index:-1; font-family:var(--font-zh); font-size:84cqw; line-height:1; color:var(--ca); opacity:.08; pointer-events:none}
+.cv-in{position:absolute; inset:0; display:flex; flex-direction:column; padding:11cqw 10cqw 9.5cqw}
+.cv-in::before,.cv-in::after{content:""; position:absolute; pointer-events:none; border:1px solid var(--ca)}
+.cv-in::before{inset:4cqw; opacity:.5}
+.cv-in::after{inset:5.6cqw; opacity:.22}
+.cv-top{display:flex; justify-content:flex-end; align-items:flex-end; gap:2.2cqw}
+.cv-zh{writing-mode:vertical-rl; font-family:var(--font-zh); font-weight:600; font-size:calc(var(--zf) * 2.4px); font-size:calc(var(--zf) * 1cqw); line-height:1; letter-spacing:.12em; color:#2b1d12; background:linear-gradient(180deg, #f5ecd6, #e1cfa6); padding:3.2cqw 1.9cqw 2.2cqw; border:1px solid rgba(43,29,18,.4); box-shadow:0 .8cqw 2.4cqw rgba(0,0,0,.4); white-space:nowrap}
+.cv-seal{flex:none; width:11cqw; height:11cqw; display:grid; place-items:center; margin-bottom:1.5cqw; background:#c3272b; color:#fbeee0; font-family:var(--font-zh); font-weight:700; font-size:7.2cqw; line-height:1; border-radius:1.3cqw; box-shadow:inset 0 0 0 .7cqw rgba(251,238,224,.55), 0 .6cqw 1.6cqw rgba(0,0,0,.35); transform:rotate(-6deg)}
+.cv-orn{display:flex; align-items:center; gap:2.4cqw; width:38cqw; margin:3cqw auto 0; color:var(--ca); opacity:.85}
+.cv-orn::before,.cv-orn::after{content:""; flex:1; height:1px; background:currentColor}
+.cv-orn i{width:2.4cqw; height:2.4cqw; background:currentColor; transform:rotate(45deg)}
+.cv-title{display:block; margin-top:auto; font-family:var(--font-cover); font-weight:700; font-size:calc(var(--fz) * 2.4px); font-size:calc(var(--fz) * 1cqw); line-height:1.17; color:var(--ci); text-wrap:balance; overflow-wrap:break-word; text-shadow:0 .5cqw 3cqw rgba(0,0,0,.55); overflow:hidden; padding:.24em 0 .1em}
+.cv-kick{display:block; font-family:var(--font-ui); font-weight:600; font-size:max(5.2cqw, 8px); line-height:1.35; letter-spacing:.12em; text-transform:uppercase; color:var(--ca); margin-bottom:2.6cqw; text-shadow:none}
+.cv-au{display:block; margin-top:5cqw; font-size:max(5cqw, 8px); font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--ca); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.cv-au::before{content:""; display:block; width:10cqw; height:1px; background:currentColor; opacity:.7; margin-bottom:3cqw}
+.cover:not(.has-zh) .cv-title{margin-block:auto; text-align:center}
+.cover:not(.has-zh) .cv-au{text-align:center}
+.cover:not(.has-zh) .cv-au::before{margin-inline:auto}
+.pal0{--c1:#932c20; --c2:#3a0d0a; --ca:#e9c46f; --ci:#fcecc8}
+.pal1{--c1:#1f6d59; --c2:#07281f; --ca:#dcc57e; --ci:#ebf6eb}
+.pal2{--c1:#2d4189; --c2:#0b1334; --ca:#d8ba79; --ci:#eef0fb}
+.pal3{--c1:#3d3d40; --c2:#0c0c0d; --ca:#cbad6c; --ci:#f3ede1}
+.pal4{--c1:#4e2c72; --c2:#190b28; --ca:#e2c189; --ci:#f6ecfb}
+.pal5{--c1:#782241; --c2:#2a0915; --ca:#edbb7a; --ci:#fcebf0}
+.pal6{--c1:#9c5b14; --c2:#3c1e04; --ca:#f8da8e; --ci:#fff4dc}
+.pal7{--c1:#186372; --c2:#062227; --ca:#a9decf; --ci:#e8f8f4}
+.pal8{--c1:#3e6e2b; --c2:#10230a; --ca:#e7da92; --ci:#f4f8e4}
+.pal9{--c1:#26384f; --c2:#09111e; --ca:#c6cfdb; --ci:#f2f5f9}
+.pal10{--c1:#6d5621; --c2:#241b06; --ca:#f2d88c; --ci:#fcf4de}
+/* hoa văn: sóng nước, hồi văn, song cửa, núi trăng, sao */
+.pat0{--pm:radial-gradient(circle at 50% 100%, #0000 21%, #000 22% 26%, #0000 27% 40%, #000 41% 45%, #0000 46% 59%, #000 60% 64%, #0000 65%) 0 0/16cqw 8cqw, radial-gradient(circle at 50% 100%, #0000 21%, #000 22% 26%, #0000 27% 40%, #000 41% 45%, #0000 46% 59%, #000 60% 64%, #0000 65%) 8cqw 4cqw/16cqw 8cqw}
+.pat1{--po:.09; --pm:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M3 21V3h18v15H8V8h8v5h-3' fill='none' stroke='%23000' stroke-width='1.5'/%3E%3C/svg%3E") 0 0/13cqw 13cqw}
+.pat2{--po:.12; --pm:repeating-linear-gradient(45deg, #000 0 1px, #0000 1px 9cqw), repeating-linear-gradient(-45deg, #000 0 1px, #0000 1px 9cqw)}
+.pat3{--pm:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 120'%3E%3Cpath d='M0 120V78l18-12 12 6 22-24 18 16 14-6 20 18 22-24 20 14 14-6 22 14 18-10v56z' fill='%23000' fill-opacity='.55'/%3E%3Cpath d='M0 120V96l24-12 20 8 26-18 26 18 24-6 30 14 26-12 24 8v24z' fill='%23000'/%3E%3C/svg%3E") 50% 100%/100% auto no-repeat, radial-gradient(circle at 76% 24%, #000 0 12cqw, #0000 12.4cqw)}
+.pat4{--pm:radial-gradient(circle, #000 0 .45cqw, #0000 .6cqw) 0 0/7cqw 7cqw, radial-gradient(circle, #000 0 .28cqw, #0000 .4cqw) 3.5cqw 3.5cqw/7cqw 7cqw}
+
+/* ---------- trang truyện ---------- */
+.bp{max-width:1320px; margin:0 auto; padding-block:28px 120px; display:grid; grid-template-columns:340px minmax(0,1fr); gap:36px; align-items:start}
+.bp-side{display:flex; flex-direction:column; gap:18px; min-width:0}
+.bp-cover .cvbox{border-radius:14px}
+.bp-title h1{font-family:var(--font-title); font-size:25px; line-height:1.3; margin:0; overflow-wrap:anywhere; text-wrap:balance}
+.bp-title h1:focus:not(:focus-visible){outline:none}
+.bp-title .zh{color:var(--dk-muted); font-size:15px; margin-top:4px}
+.obtn.big{width:100%; padding:14px 20px; font-size:16px; border-radius:14px}
+.obtn.big svg{width:19px; height:19px}
+.bp-info{display:grid; grid-template-columns:max-content minmax(0,1fr); gap:12px 14px; margin:0; font-size:15px; line-height:1.45}
+.bp-info dt{color:var(--dk-muted); white-space:nowrap; min-width:72px}
+.bp-info dd{margin:0; min-width:0; overflow-wrap:anywhere}
+.dim{color:var(--dk-dim)}
+.pills{display:flex; flex-wrap:wrap; gap:6px}
+.pill{border:1px solid var(--dk-line2); border-radius:999px; padding:1px 11px; font-size:13px; line-height:1.65}
+.stag{display:inline-block; border-radius:6px; padding:1px 9px; font-size:13px; font-weight:600}
+.st-dang-ra{background:rgba(74,222,128,.13); color:#8ff0b2}
+.st-hoan-thanh{background:rgba(255,107,61,.16); color:#ffb08f}
+.st-tam-ngung{background:rgba(255,255,255,.08); color:var(--dk-muted)}
+.rbar{display:flex; align-items:center; gap:10px; margin-top:8px; font-size:13px; color:var(--dk-muted); font-variant-numeric:tabular-nums}
+.rbar span{flex:1; height:6px; border-radius:3px; background:var(--dk-surface2); overflow:hidden}
+.rbar i{display:block; height:100%; background:var(--dk-accent); border-radius:3px}
+.bp-acts{display:flex; flex-wrap:wrap; gap:8px}
+.bp-ask{border:1px solid rgba(255,120,120,.38); background:rgba(255,90,90,.08); border-radius:12px; padding:12px 14px; display:grid; gap:10px; font-size:14px}
+.bp-ask .row{gap:8px}
+.bp-sec h2{font-size:17px; margin:0 0 8px}
+.intro{color:#d6d6db; font-size:15px; line-height:1.65}
+.intro p{margin:0 0 .7em}
+.intro p:last-child{margin-bottom:0}
+.intro.clamp{max-height:calc(1.65em * 7.5); overflow:hidden; -webkit-mask-image:linear-gradient(#000 55%, transparent); mask-image:linear-gradient(#000 55%, transparent)}
+#bIntroMore{margin-top:6px; font-size:14px}
+#batchBox{display:block}
+#batchBox summary{font-weight:600; cursor:pointer}
+#batchBox .bbody{display:grid; gap:12px; margin-top:12px}
+.chbox{min-width:0; background:var(--dk-surface); border:1px solid var(--dk-line); border-radius:18px; padding:22px 24px 14px; container:chbox / inline-size}
+.chhead{display:flex; justify-content:space-between; align-items:baseline; gap:12px}
+.chhead h2{margin:0; font-size:21px}
+.chhead span{color:var(--dk-muted); font-size:15px; white-space:nowrap}
+.chblocks{position:relative; display:flex; gap:8px; overflow-x:auto; margin:14px -2px 0; padding:2px 2px 8px; scrollbar-width:thin; scrollbar-color:var(--dk-line2) transparent; overscroll-behavior-x:contain}
+.chblocks button{flex:none; background:transparent; color:var(--dk-muted); border:1px solid var(--dk-line2); border-radius:999px; padding:7px 15px; font-size:14px; font-variant-numeric:tabular-nums}
+.chblocks button:hover{color:var(--dk-text); border-color:rgba(255,255,255,.3)}
+.chblocks button[aria-pressed="true"]{background:var(--dk-accent); color:var(--dk-on-accent); border-color:transparent; font-weight:600}
+.chtools{display:flex; gap:10px; margin-top:8px}
+.chfind{position:relative; flex:1; min-width:0; display:flex}
+.chfind svg{position:absolute; left:14px; top:50%; transform:translateY(-50%); width:18px; height:18px; color:var(--dk-muted); pointer-events:none}
+.chfind input{width:100%; min-width:0; background:var(--dk-surface2); border:1px solid var(--dk-line); border-radius:999px; padding:10px 16px 10px 42px; color:var(--dk-text); font-size:15px}
+.chfind input::placeholder{color:var(--dk-dim)}
+.chnote{color:var(--dk-muted); font-size:13px; padding-top:10px}
+.chnote:empty{display:none}
+.chlist{list-style:none; margin:6px 0 0; padding:0; display:grid; grid-template-columns:minmax(0,1fr); column-gap:30px}
+@container chbox (min-width:520px){.chlist{grid-template-columns:repeat(2, minmax(0,1fr))}}
+@container chbox (min-width:760px){.chlist{grid-template-columns:repeat(3, minmax(0,1fr))}}
+.chlist li{min-width:0; border-bottom:1px solid var(--dk-line)}
+.chlist button{width:100%; display:flex; align-items:center; gap:8px; background:none; border:0; padding:12px 0; text-align:left; color:var(--dk-text); font-size:15px}
+.chlist .t{flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.chlist button:hover .t{color:var(--dk-accent-hi)}
+.chlist li.rd button{color:var(--dk-dim)}
+.chlist li.cur button{color:var(--dk-accent); font-weight:600}
+.chlist .cl{flex:none; font-size:11px; font-weight:600; line-height:1.6; color:#ffb291; border:1px solid rgba(255,140,100,.45); border-radius:5px; padding:0 5px}
+.chlist .cl.part{color:var(--dk-muted); border-color:var(--dk-line2)}
+#viewToc.pre #bActs,#viewToc.pre #tDelAsk,#viewToc.pre #batchBox{display:none !important}
+#viewToc .dkwrap{max-width:1320px}
+@container chbox (max-width:480px){
+  .chtools{flex-wrap:wrap}
+  .chfind{flex-basis:100%}
+  #chSort{margin-left:auto}
+}
+@media (max-width:900px){
+  .bp{grid-template-columns:minmax(0,1fr); gap:28px; padding-top:22px}
+}
+/* máy tính bảng: bìa bên trái, tên + nút đọc + thông tin bên phải */
+@media (min-width:601px) and (max-width:900px){
+  .bp-side{display:grid; grid-template-columns:230px minmax(0,1fr); gap:16px 28px; align-items:start}
+  .bp-cover{grid-row:1 / span 4}
+  .bp-side > :not(.bp-cover, .bp-title, #tRead, .bp-info){grid-column:1 / -1}
+  #tRead{max-width:380px}
+}
+@media (max-width:600px){
+  .bp-cover{width:min(230px, 62vw); align-self:center}
+  .bp-title{text-align:center}
+  .chbox{padding:16px 14px 8px; border-radius:14px}
+  .chhead h2{font-size:19px}
+}
 
 /* ---------- reader ---------- */
 .rhead{background:var(--head); text-align:center; padding-block:14px 16px}
-.rhead .back{display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px}
+.rhead .back{display:flex; justify-content:space-between; align-items:center; gap:12px; font-size:13px; margin-bottom:6px}
+.rhead .rback{display:block; min-width:0; max-width:75%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left}
 .rhead h1{font-family:var(--font-title); font-weight:700; font-size:clamp(20px, 3.4vw, 30px); color:var(--muted); margin:0; line-height:1.3; text-wrap:balance}
 .rhead p{margin:6px 0 0; color:var(--muted); font-size:clamp(15px, 2vw, 19px); text-wrap:balance}
 .cnav{background:var(--band); padding-block:10px}
@@ -92,10 +283,7 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 @media (prefers-reduced-motion: reduce){#rText .stream::after{animation:none}}
 .placeholder{border:1px dashed color-mix(in srgb, var(--rf) 30%, transparent); border-radius:10px; padding:22px; font-family:var(--font-ui); font-size:15px; display:grid; gap:12px; justify-items:start}
 
-/* ---------- table of contents ---------- */
-.tochead{background:var(--head); padding-block:18px 20px; border-bottom:1px solid var(--line)}
-.tochead h1{font-family:var(--font-title); font-size:28px; margin:6px 0 2px; line-height:1.3}
-.tocbody{padding-block:20px 120px; display:grid; gap:20px}
+/* ---------- khối phụ dùng chung (Claude dịch nhiều chương…) ---------- */
 .box{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; display:grid; gap:12px}
 .box h2{font-size:16px; margin:0}
 .row{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
@@ -104,20 +292,10 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 .sel-in{padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--rb)}
 .prog{height:6px; background:var(--line); border-radius:3px; overflow:hidden}
 .prog i{display:block; height:100%; background:var(--link); width:0; transition:width .3s}
-.toc{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:0 20px}
-.toc li{border-bottom:1px solid var(--line)}
-.toc button{width:100%; text-align:left; background:none; border:0; padding:10px 2px; display:flex; gap:10px; align-items:baseline}
-.toc button:hover{color:var(--link)}
-.toc .n{color:var(--muted); font-variant-numeric:tabular-nums; min-width:3ch; font-size:13px}
-.toc .t{flex:1; min-width:0; overflow-wrap:anywhere}
-.toc .cl{font-size:11px; color:var(--link); border:1px solid currentColor; border-radius:4px; padding:0 4px; white-space:nowrap}
-.toc li.cur button{color:var(--link); font-weight:600}
+@media (prefers-reduced-motion: reduce){.prog i{transition:none}}
 
 /* ---------- truyện có sẵn (tiếng Việt, đọc thẳng từ server, không qua bộ dịch) ---------- */
-.prehead{font-family:var(--font-title); font-size:15px; font-weight:600; color:var(--muted); margin:0 0 10px; letter-spacing:.02em}
-#preBox{margin-bottom:28px}
 #viewRead.pre .modebar,#viewRead.pre .saved-note{display:none !important}
-#viewToc.pre #tInfo,#viewToc.pre #tAppend,#viewToc.pre #tNames,#viewToc.pre #batchBox{display:none !important}
 #rText p.sys,#rText p.chat{text-indent:0; margin-bottom:.3em; font-size:.9em}
 #rText p.sys{padding-left:.75em; border-left:3px solid color-mix(in srgb, var(--link) 55%, transparent); color:color-mix(in srgb, var(--rf) 80%, var(--rb))}
 #rText p.chat{font-size:.86em; color:color-mix(in srgb, var(--rf) 68%, var(--rb))}
@@ -198,6 +376,14 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 .filebtn:focus-within{outline:2px solid var(--link); outline-offset:2px}
 .rslist{margin:0; padding-left:20px; max-height:32vh; overflow:auto; display:grid; gap:2px}
 .warn{color:var(--danger)}
+.tagbox{display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:6px 8px; border:1px solid color-mix(in srgb, var(--rf) 30%, transparent); border-radius:6px; background:var(--card)}
+.tagbox:focus-within{outline:2px solid var(--link); outline-offset:1px}
+.fld .tagbox input{flex:1; width:auto; min-width:130px; border:0; padding:4px 2px; background:transparent; outline:none}
+.gtag{display:inline-flex; align-items:center; gap:6px; border:0; border-radius:999px; padding:3px 7px 3px 11px; font-size:13px; background:color-mix(in srgb, var(--link) 24%, transparent); color:var(--rf)}
+.gtag span{font-size:16px; line-height:1; opacity:.75}
+.gsug{display:flex; flex-wrap:wrap; gap:6px; margin-top:4px}
+.gsug button{border:1px dashed color-mix(in srgb, var(--rf) 32%, transparent); background:none; border-radius:999px; padding:3px 10px; font-size:13px; color:var(--muted)}
+.gsug button:hover{color:var(--rf); border-style:solid}
 
 #toast{position:fixed; z-index:60; left:50%; transform:translateX(-50%); bottom:calc(90px + env(safe-area-inset-bottom, 0px)); background:#2b2b2b; color:#fff; padding:10px 16px; border-radius:8px; font-size:14px; max-width:calc(100vw - 32px); box-shadow:0 6px 18px rgba(0,0,0,.25)}
 #job{position:fixed; z-index:35; left:50%; transform:translateX(-50%); top:calc(10px + env(safe-area-inset-top, 0px)); background:#123d45; color:#fff; padding:8px 8px 8px 14px; border-radius:999px; display:flex; gap:10px; align-items:center; font-size:14px; max-width:calc(100vw - 32px); box-shadow:0 6px 18px rgba(0,0,0,.25)}
@@ -224,81 +410,114 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
   <symbol id="i-al-j" viewBox="0 0 24 24"><path d="M3 5h18M3 10h18M3 14h18M3 19h18"/></symbol>
   <symbol id="i-al-r" viewBox="0 0 24 24"><path d="M3 5h18M9 10h12M3 14h18M9 19h12"/></symbol>
   <symbol id="i-al-in" viewBox="0 0 24 24"><path d="M3 5h18M11 10h10M11 14h10M3 19h18M3 9l4 3-4 3"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+  <symbol id="i-sort" viewBox="0 0 24 24"><path d="M8 20V4M4 8l4-4 4 4M16 4v16M12 16l4 4 4-4"/></symbol>
 </svg>
 
 <div id="memBanner" class="banner gutter" hidden><div class="wrap">Trình duyệt đang chặn lưu dữ liệu, nên truyện và name sẽ mất khi bạn đóng trang. Hãy mở trang ở cửa sổ thường (không ẩn danh).</div></div>
 <div id="dbWait" class="banner info gutter" hidden role="status"><div class="wrap">Đang mở dữ liệu… Trình duyệt mở kho truyện hơi chậm, bạn chờ một chút.<button class="linkbtn" id="dbMem" hidden>Dùng tạm, không lưu</button></div></div>
 
 <!-- ============ LIBRARY ============ -->
-<section id="viewLib" hidden>
-  <header class="libhead gutter">
-    <div class="wrap">
-      <div class="brand"><h1>Thư Các</h1><span class="seal">書閣</span><p>Tủ truyện convert · sửa name<span class="claude-only"> · Claude dịch</span></p></div>
-      <div class="toolbar">
-        <button class="btn primary" id="bAdd"><svg class="i"><use href="#i-plus"/></svg>Thêm truyện</button>
-        <button class="btn" id="bDict">Từ điển</button>
-        <button class="btn" id="bKho">Kho name chung</button>
-        <button class="btn" id="bBackup">Sao lưu</button>
-        <label class="btn filebtn">Khôi phục<input type="file" id="fRestore" accept=".json,application/json"></label>
+<section id="viewLib" class="dk" hidden>
+  <header class="dkbar gutter">
+    <div class="dkwrap">
+      <div class="dkbrand"><span class="dkseal" lang="zh" aria-hidden="true">書</span><h1>Thư Các</h1><span class="dktag">Tủ truyện convert · sửa name<span class="claude-only"> · Claude dịch</span></span></div>
+      <div class="dkacts">
+        <button class="obtn" id="bAdd"><svg class="i"><use href="#i-plus"/></svg>Thêm truyện</button>
+        <button class="dbtn" id="bMore" aria-expanded="false" aria-controls="libTools"><svg class="i"><use href="#i-more"/></svg><span class="lbl">Thêm…</span></button>
+        <div class="libtools" id="libTools">
+          <button class="dbtn" id="bDict">Từ điển</button>
+          <button class="dbtn" id="bKho">Kho name</button>
+          <button class="dbtn" id="bBackup">Sao lưu</button>
+          <label class="dbtn filebtn">Khôi phục<input type="file" id="fRestore" accept=".json,application/json"></label>
+        </div>
       </div>
-      <div class="dictstat" id="dictStat">Đang nạp từ điển…</div>
     </div>
   </header>
   <div class="libbody gutter">
-    <div class="wrap">
-      <div id="preBox" hidden>
-        <h2 class="prehead">Truyện có sẵn</h2>
-        <div class="books" id="preBooks"></div>
-      </div>
-      <h2 class="prehead" id="ownHead" hidden>Truyện của bạn</h2>
-      <div class="books" id="books"></div>
-      <div class="empty" id="libEmpty" hidden>
-        <h2>Tủ truyện đang trống</h2>
-        <ol>
-          <li>Bấm <b>Thêm truyện</b>, dán chữ Trung hoặc chọn file .txt. Trang tự chia chương theo dòng 第…章.</li>
-          <li>Đọc bản convert. Bấm vào một từ để mở bảng Name và sửa cách dịch.</li>
-          <li class="claude-only">Truyện nào thích thì bấm <b>Claude dịch</b> để có bản dịch mượt.</li>
-        </ol>
-        <div class="row">
-          <button class="btn primary" id="bAdd2"><svg class="i"><use href="#i-plus"/></svg>Thêm truyện</button>
-          <button class="btn" id="bSample">Thử với đoạn mẫu (Tam Quốc Diễn Nghĩa, hồi 1)</button>
+    <div class="dkwrap">
+      <div class="dictstat" id="dictStat">Đang nạp từ điển…</div>
+      <section id="preBox" hidden>
+        <h2 class="secth">Truyện có sẵn</h2>
+        <div class="grid" id="preBooks"></div>
+      </section>
+      <section>
+        <h2 class="secth" id="ownHead" hidden>Truyện của bạn <span class="cnt" id="ownCnt"></span></h2>
+        <div class="grid" id="books"></div>
+        <div class="empty" id="libEmpty" hidden>
+          <h2>Tủ truyện đang trống</h2>
+          <ol>
+            <li>Bấm <b>Thêm truyện</b>, dán chữ Trung hoặc chọn file .txt. Trang tự chia chương theo dòng 第…章.</li>
+            <li>Đọc bản convert. Bấm vào một từ để mở bảng Name và sửa cách dịch.</li>
+            <li class="claude-only">Truyện nào thích thì bấm <b>Claude dịch</b> để có bản dịch mượt.</li>
+          </ol>
+          <div class="row">
+            <button class="obtn" id="bAdd2"><svg class="i"><use href="#i-plus"/></svg>Thêm truyện</button>
+            <button class="dbtn" id="bSample">Thử với đoạn mẫu (Tam Quốc Diễn Nghĩa, hồi 1)</button>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 </section>
 
-<!-- ============ TOC ============ -->
-<section id="viewToc" hidden>
-  <header class="tochead gutter">
-    <div class="wrap">
-      <button class="linkbtn" data-go="lib">‹ Tủ truyện</button>
-      <h1 id="tTitle"></h1>
-      <div class="muted" id="tMeta"></div>
-      <div class="toolbar">
-        <button class="btn primary" id="tRead"><svg class="i"><use href="#i-book"/></svg>Đọc tiếp</button>
-        <button class="btn" id="tInfo">Sửa thông tin</button>
-        <button class="btn" id="tAppend"><svg class="i"><use href="#i-plus"/></svg>Thêm chương</button>
-        <button class="btn" id="tNames">Name truyện này</button>
-      </div>
+<!-- ============ TRANG TRUYỆN ============ -->
+<section id="viewToc" class="dk" hidden>
+  <header class="dkbar gutter">
+    <div class="dkwrap">
+      <button class="dback" data-go="lib"><svg class="i"><use href="#i-l"/></svg>Tủ truyện</button>
+      <div class="dkbrand sm" aria-hidden="true"><span class="dkseal" lang="zh">書</span><b>Thư Các</b></div>
     </div>
   </header>
-  <div class="tocbody gutter">
-    <div class="wrap" style="display:grid; gap:20px">
-      <div class="box claude-only" id="batchBox">
-        <h2>Claude dịch nhiều chương</h2>
-        <div class="row">
-          <label>Từ chương <input class="num" type="number" id="tFrom" min="1" value="1"></label>
-          <label>đến <input class="num" type="number" id="tTo" min="1" value="1"></label>
-          <label><input type="checkbox" id="tRedo"> Dịch lại cả chương đã dịch</label>
+  <div class="gutter">
+    <div class="bp">
+      <div class="bp-side">
+        <div class="bp-cover" id="bCover"></div>
+        <div class="bp-title"><h1 id="tTitle" tabindex="-1"></h1><div class="zh" id="tZh" lang="zh" hidden></div></div>
+        <button class="obtn big" id="tRead"><svg class="i"><use href="#i-book"/></svg><span id="tReadL">Đọc truyện</span></button>
+        <dl class="bp-info" id="bInfo"></dl>
+        <div class="bp-acts" id="bActs">
+          <button class="dbtn sm" id="tInfo"><svg class="i"><use href="#i-edit"/></svg>Sửa thông tin</button>
+          <button class="dbtn sm" id="tAppend"><svg class="i"><use href="#i-plus"/></svg>Thêm chương</button>
+          <button class="dbtn sm" id="tNames">Name truyện này</button>
+          <button class="dbtn sm" id="tBackup">Sao lưu truyện này</button>
+          <button class="dbtn sm warnb" id="tDel">Xóa truyện</button>
         </div>
-        <div class="row">
-          <button class="btn primary" id="tStart">Bắt đầu dịch</button>
-          <span class="small muted" id="tState"></span>
+        <div class="bp-ask" id="tDelAsk" hidden>
+          <span>Xóa truyện này cùng mọi chương và bản dịch? Không lấy lại được, trừ khi bạn đã sao lưu.</span>
+          <div class="row"><button class="dbtn sm warnb" id="tDel2">Xóa truyện</button><button class="dbtn sm" id="tDelNo">Không xóa</button></div>
         </div>
-        <div class="prog" id="tProgWrap" hidden><i id="tProg"></i></div>
+        <section class="bp-sec">
+          <h2>Giới thiệu</h2>
+          <div class="intro" id="bIntro"></div>
+          <button class="linkbtn" id="bIntroMore" aria-expanded="false" aria-controls="bIntro" hidden>Xem thêm</button>
+        </section>
+        <details class="box claude-only" id="batchBox">
+          <summary>Claude dịch nhiều chương</summary>
+          <div class="bbody">
+            <div class="row">
+              <label>Từ chương <input class="num" type="number" id="tFrom" min="1" value="1"></label>
+              <label>đến <input class="num" type="number" id="tTo" min="1" value="1"></label>
+              <label><input type="checkbox" id="tRedo"> Dịch lại cả chương đã dịch</label>
+            </div>
+            <div class="row">
+              <button class="btn primary" id="tStart">Bắt đầu dịch</button>
+              <span class="small muted" id="tState"></span>
+            </div>
+            <div class="prog" id="tProgWrap" hidden><i id="tProg"></i></div>
+          </div>
+        </details>
       </div>
-      <ol class="toc" id="tocList"></ol>
+      <div class="chbox">
+        <div class="chhead"><h2>Danh sách chương</h2><span id="chCount"></span></div>
+        <div class="chblocks" id="chBlocks" role="group" aria-label="Chọn khoảng chương"></div>
+        <div class="chtools">
+          <label class="chfind"><svg class="i"><use href="#i-find"/></svg><input type="search" id="chFind" placeholder="Tìm số chương hoặc tên chương…" aria-label="Tìm số chương hoặc tên chương" autocomplete="off"></label>
+          <button class="dbtn" id="chSort" title="Đổi thứ tự"><svg class="i"><use href="#i-sort"/></svg><span id="chSortL">Cũ nhất</span></button>
+        </div>
+        <div class="chnote" id="chNote" role="status"></div>
+        <ol class="chlist" id="tocList"></ol>
+      </div>
     </div>
   </div>
 </section>
@@ -307,7 +526,7 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 <section id="viewRead" hidden>
   <header class="rhead gutter">
     <div class="wrap">
-      <div class="back"><button class="linkbtn" data-go="lib">‹ Tủ truyện</button><span class="muted" id="rPos"></span></div>
+      <div class="back"><button class="linkbtn rback" id="rBack" title="Về trang truyện">‹ <span id="rBackT"></span></button><span class="muted" id="rPos"></span></div>
       <h1 id="rTitle"></h1>
       <p id="rSub"></p>
     </div>
@@ -446,6 +665,12 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
   <div class="body">
     <label class="fld"><span>Tên tiếng Việt</span><input id="iVi"><span class="hint" id="iZh"></span></label>
     <label class="fld"><span>Tác giả</span><input id="iAuthor"></label>
+    <label class="fld"><span>Trạng thái</span><select id="iStatus"><option value="">Chưa rõ</option><option value="dang-ra">Đang ra</option><option value="hoan-thanh">Hoàn thành</option><option value="tam-ngung">Tạm ngưng</option></select></label>
+    <div class="fld"><span id="iGenL">Thể loại</span>
+      <div class="tagbox"><span id="iGenTags" style="display:contents"></span><input id="iGenIn" aria-labelledby="iGenL" placeholder="Gõ thể loại rồi bấm Enter"></div>
+      <div class="gsug" id="iGenSug" aria-label="Gợi ý thể loại"></div>
+    </div>
+    <label class="fld"><span>Giới thiệu</span><textarea id="iIntro" style="min-height:120px" placeholder="Vài dòng giới thiệu truyện. Dán chữ Trung cũng được, trang sẽ tự convert."></textarea></label>
     <label class="fld"><span>Ghi chú cho Claude khi dịch</span><textarea id="iNotes" style="min-height:100px" placeholder="Ví dụ: tiên hiệp, nam chính lạnh lùng; nam chính xưng ta, gọi sư phụ là sư tôn; giữ văn phong cổ trang."></textarea></label>
   </div>
   <div class="foot"><button class="btn" data-close>Hủy</button><button class="btn primary" id="iOk">Lưu</button></div>
@@ -604,6 +829,55 @@ function cleanNames(o, cnt){
   for (const k of Object.keys(o)){ const v = o[k]; if (k && isStr(v)) out[k] = v; else if (cnt) cnt.bad++; }
   return out;
 }
+// Bỏ dấu tiếng Việt để tìm kiếm / so sánh ("thien" khớp "Thiên")
+const fold = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[đĐ]/g, 'd').toLowerCase();
+// Thông tin truyện (trường tùy chọn): trạng thái, thể loại, giới thiệu
+const STATUS = { 'dang-ra':'Đang ra', 'hoan-thanh':'Hoàn thành', 'tam-ngung':'Tạm ngưng' };
+const GENRES = ['Huyền huyễn','Tiên hiệp','Võ hiệp','Đô thị','Hệ thống','Lãnh chúa','Dị giới','Xuyên không','Trọng sinh','Khoa huyễn','Mạt thế','Linh dị','Lịch sử','Quân sự','Ngôn tình','Võng du','Đồng nhân'];
+const okStatus = x => isStr(x) && Object.prototype.hasOwnProperty.call(STATUS, x);
+// Nhận cả mã ("dang-ra") lẫn chữ hiển thị ("Đang ra")
+function normStatus(x){
+  if (!isStr(x)) return '';
+  const s = x.trim();
+  if (okStatus(s)) return s;
+  const f = fold(s);
+  return Object.keys(STATUS).find(k => fold(STATUS[k]) === f) || '';
+}
+function cleanGenres(x){
+  if (!Array.isArray(x)) return [];
+  const seen = new Set(), out = [];
+  for (const g of x){
+    if (!isStr(g)) continue;
+    const s = g.replace(/\s+/g, ' ').trim().slice(0, 40), k = fold(s);
+    if (!s || seen.has(k)) continue;
+    seen.add(k); out.push(s);
+    if (out.length >= 20) break;
+  }
+  return out;
+}
+// Chương đã đọc: mảng khoảng [[đầu, cuối], …] tính từ 0, gồm cả hai đầu, tăng dần, không chồng nhau.
+// max: bỏ phần từ chương max trở đi (Infinity = giữ hết).
+function cleanRanges(x, max){
+  if (!Array.isArray(x)) return [];
+  const a = [];
+  for (const p of x.slice(0, 50000)){
+    if (!Array.isArray(p) || p.length !== 2 || !isNat(p[0]) || !isNat(p[1]) || p[0] > p[1] || p[0] >= max) continue;
+    a.push([p[0], Math.min(p[1], max - 1)]);
+  }
+  a.sort((u, v) => u[0] - v[0]);
+  const out = [];
+  for (const p of a){ const l = out[out.length - 1]; if (l && p[0] <= l[1] + 1) l[1] = Math.max(l[1], p[1]); else out.push(p); }
+  return out;
+}
+function rngHas(r, i){
+  let lo = 0, hi = r.length - 1;
+  while (lo <= hi){ const m = (lo + hi) >> 1; if (i < r[m][0]) hi = m - 1; else if (i > r[m][1]) lo = m + 1; else return true; }
+  return false;
+}
+const rngAdd = (r, i) => cleanRanges(r.concat([[i, i]]), Infinity);
+const rngCount = (r, max) => r.reduce((n, p) => n + Math.max(0, Math.min(p[1], max - 1) - p[0] + 1), 0);
+// Dữ liệu cũ chưa có danh sách chương đã đọc: coi như đã đọc từ chương 1 tới chương đang đọc
+const rngSeed = last => isNat(last) ? [[0, last]] : [];
 function lenIdxAdd(m, k){ if (k.length < 2) return; const p = k.slice(0, 2), L = Math.min(k.length, KEY_MAX); if ((m.get(p) || 0) < L) m.set(p, L); }
 function nameIdxAdd(k){ if (!k) return; const L = Math.min(k.length, KEY_MAX); if ((D.n1.get(k[0]) || 0) < L) D.n1.set(k[0], L); lenIdxAdd(D.n2, k); }
 function rebuildNameIdx(){
@@ -864,8 +1138,53 @@ function bookTitle(b){
 const authorName = b => b.author ? (D.loaded && hasHan(b.author) ? titleCase(hanViet(b.author)) : String(b.author)) : '';
 const splitParas = zh => (zh || '').split(/\n+/).map(s => s.replace(/^[\s　]+|[\s　]+$/g, '')).filter(Boolean);
 
+/* ================= bìa tự tạo (HTML/CSS, không ảnh) ================= */
+// Bảng màu (.palN) và hoa văn (.patN) chọn theo mã băm của id; chữ tự co theo độ dài tên để vừa bìa ở mọi cỡ (đơn vị cqw).
+const NPAL = 11, NPAT = 5;
+function hashStr(s){ let h = 2166136261; for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+// Bề rộng ước lượng của một chữ, tính theo cỡ chữ (font hiển thị đậm)
+const glyphW = c => c !== c.toLowerCase() ? .7 : /[.,:;'’!?()\-]/.test(c) ? .3 : /[mwMW]/.test(c) ? .78 : .55;
+// Cỡ chữ lớn nhất (theo % bề ngang bìa) mà tên vẫn vừa khung rộng 80% và cao availH%
+function fitTitle(title, availH){
+  const words = title.split(/\s+/).filter(Boolean).map(w => [...w].reduce((s, c) => s + glyphW(c), 0));
+  for (let fz = 21; fz > 8; fz -= .5){
+    let lines = 1, cur = 0, ok = true;
+    for (const w of words){
+      const ww = w * fz;
+      if (ww > 80){ ok = false; break; }
+      const next = cur ? cur + .27 * fz + ww : ww;
+      if (next > 80){ lines++; cur = ww; } else cur = next;
+    }
+    if (ok && (lines * 1.17 + .34) * fz <= availH) return fz;
+  }
+  return 8;
+}
+// o = { id, title, zh (tên Trung, có thể trống), author }
+function coverHTML(o){
+  const id = String(o.id || ''), title = String(o.title || '').trim() || 'Chưa đặt tên';
+  const h = hashStr(id || title);
+  const zh = [...String(o.zh || '')].filter(isHan);
+  const nz = Math.min(zh.length, 7);
+  // "Toàn Dân Lãnh Chúa: Vạn Chủng Lãnh Chủ" → dòng nhỏ phía trên + tên chính
+  let kick = '', main = title;
+  const ci = title.indexOf(':');
+  if (ci > 0 && ci <= 30 && title.slice(ci + 1).trim().length >= 3){ kick = title.slice(0, ci).trim(); main = title.slice(ci + 1).trim(); }
+  const author = String(o.author || '').trim();
+  const zf = nz ? Math.min(7.5, 42 / nz) : 0;
+  const avail = (nz ? 106 - (nz * zf * 1.12 + 6) : 92) - (kick ? 12 : 0) - (author ? 0 : -10);
+  const fz = fitTitle(main, avail);
+  let s = '<span class="cover pal' + (h % NPAL) + ' pat' + (Math.floor(h / NPAL) % NPAT) + (nz ? ' has-zh' : '') + '" aria-hidden="true">';
+  if (nz) s += '<span class="cv-big" lang="zh">' + esc(zh[0]) + '</span>';
+  s += '<span class="cv-in" style="--fz:' + Number(fz).toFixed(1) + ';--zf:' + Number(zf).toFixed(2) + '">';
+  s += nz ? '<span class="cv-top"><span class="cv-seal" lang="zh">' + esc(zh[0]) + '</span><span class="cv-zh" lang="zh">' + esc(zh.slice(0, nz).join('')) + '</span></span>'
+          : '<span class="cv-orn"><i></i></span>';
+  s += '<span class="cv-title">' + (kick ? '<span class="cv-kick">' + esc(kick) + '</span>' : '') + esc(main) + '</span>';
+  if (author) s += '<span class="cv-au">' + esc(author) + '</span>';
+  return s + '</span></span>';
+}
+
 /* ================= app state ================= */
-const S = { view:'lib', book:null, pre:null, preState:'', preDoc:null, idx:0, chap:null, paras:[], trans:null, tpart:null, transSet:new Set(), partSet:new Set(), mode:'cv', streaming:null, wantY:null, booting:true };
+const S = { view:'lib', book:null, pre:null, preState:'', preDoc:null, idx:0, chap:null, paras:[], trans:null, tpart:null, transSet:new Set(), partSet:new Set(), readR:[], readHas:false, mode:'cv', streaming:null, wantY:null, booting:true };
 const DEF = { bg:null, fg:null, shadow:false, fs:19, lh:1.7, font:'Literata', align:'left', indent:0, tier:'default' };
 let ST = Object.assign({}, DEF, LS.get('tc-settings', {}));
 const FONTS = {
@@ -911,6 +1230,7 @@ function applySettings(){
   $$('#swBg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c === ST.bg)));
   $$('#swFg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c === ST.fg)));
   $$('.aligns [data-al]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.al === ST.align)));
+  if (S.view === 'read') themeColor();
 }
 
 /* ================= small UI helpers ================= */
@@ -988,6 +1308,8 @@ async function readFileDetect(file, enc){
 async function readFileText(file, enc){ return (await readFileDetect(file, enc)).text; }
 function show(view){
   S.view = view;
+  document.documentElement.setAttribute('data-view', view);
+  setMenu(false);
   $('#viewLib').hidden = view !== 'lib';
   $('#viewToc').hidden = view !== 'toc';
   $('#viewRead').hidden = view !== 'read';
@@ -997,25 +1319,43 @@ function show(view){
   $('#viewRead').classList.toggle('pre', !!S.pre);
   $('#pfName').hidden = !!S.pre;
   closePopup();
+  themeColor();
   // Lúc đang mở trang thì chưa ghi: tab khác mở cùng lúc vẫn đọc được trang đang xem dở
   if (!S.booting) LS.set('tc-last', { view, book:S.book ? S.book.id : null, pre:S.pre ? S.pre.id : null });
 }
+// Màu thanh trình duyệt trên điện thoại (bản web có thẻ meta theme-color): tối ở tủ truyện / trang truyện, màu nền đọc ở trang đọc
+function themeColor(){
+  try{
+    const m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', S.view === 'read' ? getComputedStyle(document.body).backgroundColor : '#0e0e10');
+  }catch(e){}
+}
+// Menu "Thêm…" của tủ truyện trên điện thoại
+function setMenu(open){
+  const t = $('#libTools'); if (!t) return;
+  t.classList.toggle('open', !!open);
+  $('#bMore').setAttribute('aria-expanded', String(!!open));
+}
 
 /* ================= library ================= */
+// Một ô trong lưới tủ truyện: bìa, vạch tiến độ (nếu đang đọc), tên (tối đa 2 dòng), dòng phụ
+function tileHTML(attr, cover, title, sub, prog){
+  const w = prog == null ? '' : '<span class="pg"><i style="width:' + Math.max(2, Math.min(100, Number(prog) || 0)).toFixed(1) + '%"></i></span>';
+  return '<button class="tile" ' + attr + '><span class="cvbox">' + cover + w + '</span><span class="tt">' + esc(title) + '</span><span class="ta">' + esc(sub) + '</span></button>';
+}
 async function renderLib(){
   S.pre = null; S.preState = ''; S.preDoc = null;
   show('lib');
   S.book = null; LS.set('tc-last', { view:'lib', book:null });
-  const books = (await DB.all('books')).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  const books = (await DB.all('books')).filter(b => isObj(b) && isStr(b.id)).sort((a, b) => (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0));
   $('#libEmpty').hidden = books.length > 0;
-  drawPreLib(books.length);
+  $('#ownCnt').textContent = books.length ? String(books.length) : '';
+  drawPreLib();
   $('#books').innerHTML = books.map(b => {
     // Số đọc từ dữ liệu cũng phải ép kiểu: file sao lưu có thể bị sửa tay
-    const read = isNat(b.lastRead) ? 'Đang đọc chương ' + (b.lastRead + 1) : 'Chưa đọc';
-    const au = authorName(b);
-    return '<div class="book" data-id="' + esc(b.id) + '"><div style="min-width:0"><h2>' + esc(bookTitle(b)) + '</h2>' +
-      '<div class="meta">' + (b.zhTitle && hasHan(b.zhTitle) ? esc(b.zhTitle) + ' · ' : '') + (au ? esc(au) + ' · ' : '') + esc(isNat(b.count) ? b.count : 0) + ' chương · ' + esc(read) + '</div></div>' +
-      '<div class="acts"><button class="btn primary" data-act="read">Đọc tiếp</button><button class="btn" data-act="toc">Mục lục</button><button class="btn danger" data-act="del">Xóa</button></div></div>';
+    const n = isNat(b.count) ? b.count : 0, t = bookTitle(b), au = authorName(b);
+    const prog = isNat(b.lastRead) && n ? (Math.min(b.lastRead, n - 1) + 1) / n * 100 : null;
+    return tileHTML('data-id="' + esc(b.id) + '"', coverHTML({ id:b.id, title:t, zh:isStr(b.zhTitle) ? b.zhTitle : '', author:au }), t, au || n + ' chương', prog);
   }).join('');
   updateDictStat();
 }
@@ -1031,26 +1371,12 @@ function bootProg(f){
   updateDictStat();
   const w = $('#rText .dictwait'); if (w) w.textContent = 'Đang nạp từ điển… ' + pct(f);
 }
-$('#books').addEventListener('click', async e => {
-  const btn = e.target.closest('button[data-act]'); if (!btn) return;
-  const id = btn.closest('.book').dataset.id, act = btn.dataset.act;
-  if (act === 'read') openBook(id);
-  else if (act === 'toc') openToc(id);
-  else if (act === 'del'){
-    const acts = btn.parentElement;
-    acts.innerHTML = '<span class="small">Xóa truyện này cùng bản dịch?</span><button class="btn danger" data-act="del2">Xóa</button><button class="btn" data-act="cancel">Hủy</button>';
-  } else if (act === 'cancel') renderLib();
-  else if (act === 'del2'){
-    // Truyện đang được Claude dịch: dừng việc dịch; bản dịch chỉ được ghi khi truyện còn (DB.putIf)
-    const stopJob = JOB.running && JOB.bookId === id;
-    if (stopJob){ JOB.dead = id; JOB.ctl.abort(); }
-    // Xóa bản ghi truyện trước, rồi mới xóa chương / bản dịch
-    await DB.del('books', id);
-    await DB.delPrefix('chapters', id + ':'); await DB.delPrefix('trans', id + ':'); await DB.delPrefix('kv', 'tp:' + id + ':');
-    bcast({ t:'del', id });
-    toast(stopJob ? 'Đã xóa truyện và dừng việc dịch truyện này.' : 'Đã xóa truyện'); renderLib();
-  }
+$('#viewLib').addEventListener('click', e => {
+  const t = e.target.closest('.tile'); if (!t) return;
+  goTo(hashOf(t.dataset.pre || t.dataset.id));
 });
+$('#bMore').addEventListener('click', () => setMenu(!$('#libTools').classList.contains('open')));
+$('#libTools').addEventListener('click', e => { if (e.target.closest('button')) setMenu(false); });
 
 /* ---------- add book / append chapters ---------- */
 let addMode = 'new';
@@ -1178,7 +1504,7 @@ $('#aOk').addEventListener('click', async () => {
       await DB.put('books', id, b);
       addCache = null; closeModal('mAdd'); toast('Đã thêm ' + chs.length + ' chương');
       bcast({ t:'lib' });
-      openToc(id);
+      goTo(hashOf(id));
     } else {
       const id = S.book.id;
       const cur = await DB.get('books', id);
@@ -1194,7 +1520,7 @@ $('#aOk').addEventListener('click', async () => {
       if (nb && S.book && S.book.id === id){ S.book.titles = nb.titles; S.book.count = nb.count; S.book.updatedAt = nb.updatedAt; }
       addCache = null; closeModal('mAdd'); toast('Đã thêm ' + chs.length + ' chương');
       bcast({ t:'book', id });
-      openToc(id);
+      if (S.view === 'toc' && S.book && S.book.id === id) drawToc(); else goTo(hashOf(id));
     }
   }catch(e){
     $('#aInfo').textContent = 'Không thêm được truyện' + (e && e.name === 'QuotaExceededError' ? ': máy hết dung lượng lưu.' : '. Hãy thử lại.');
@@ -1210,9 +1536,10 @@ $('#bSample').addEventListener('click', async e => {
   const id = 'b' + Date.now().toString(36) + 'smp';
   const chs = splitChapters(SAMPLE);
   await DB.putMany('chapters', chs.map((c, i) => [ck(id, i), c]));
-  await DB.put('books', id, { id, zhTitle:'三国演义', viTitle:'Tam Quốc Diễn Nghĩa (đoạn mẫu)', author:'罗贯中', notes:'Tiểu thuyết lịch sử cổ điển, văn phong trang trọng.', names:{}, titles:chs.map(c => c.zhTitle), count:chs.length, lastRead:null, createdAt:Date.now(), updatedAt:Date.now() });
+  await DB.put('books', id, { id, zhTitle:'三国演义', viTitle:'Tam Quốc Diễn Nghĩa (đoạn mẫu)', author:'罗贯中', notes:'Tiểu thuyết lịch sử cổ điển, văn phong trang trọng.', names:{}, titles:chs.map(c => c.zhTitle), count:chs.length, lastRead:null, createdAt:Date.now(), updatedAt:Date.now(),
+    status:'hoan-thanh', genres:['Lịch sử', 'Quân sự'], intro:'东汉末年，天下大乱，群雄并起。\n魏、蜀、吴三国鼎立，英雄辈出。' });
   $('#bSample').disabled = false;
-  openBook(id, 0);
+  goTo(hashOf(id, 0));
 });
 
 /* ================= book / toc ================= */
@@ -1222,12 +1549,34 @@ function fixBook(b){
   if (!isNat(b.count)) b.count = 0;
   if (b.lastRead != null && !(isNat(b.lastRead) && b.lastRead < b.count)) b.lastRead = isNat(b.lastRead) && b.count ? b.count - 1 : null;
   if (!Array.isArray(b.titles)) b.titles = null;
+  if (!okStatus(b.status)) delete b.status;
+  b.genres = cleanGenres(b.genres);
+  if (!isStr(b.intro)) b.intro = '';
   return b;
+}
+// Danh sách chương đã đọc của truyện đang mở (kv "read:<id>"); chưa có thì gợi ý từ chương đang đọc
+async function loadRead(b){
+  let r;
+  try{ r = await DB.get('kv', 'read:' + b.id); }catch(e){ r = undefined; }
+  if (!S.book || S.book.id !== b.id) return;
+  S.readHas = r !== undefined;
+  S.readR = S.readHas ? cleanRanges(r, Infinity) : rngSeed(b.lastRead);
+}
+// Đánh dấu đã đọc: chỉ thêm chương này vào bản mới nhất trong IndexedDB (không đè dữ liệu tab khác)
+function markRead(b, idx){
+  if (S.readHas && rngHas(S.readR, idx)) return;
+  const seed = S.readR;
+  S.readR = rngAdd(S.readR, idx); S.readHas = true;
+  DB.update('kv', 'read:' + b.id, cur => {
+    const base = cur === undefined ? seed : cleanRanges(cur, Infinity);
+    return cur !== undefined && rngHas(base, idx) ? undefined : rngAdd(base, idx);
+  }).then(v => { if (v && S.book && S.book.id === b.id) S.readR = v; }).catch(() => {});
 }
 async function loadBook(id){
   const b = await DB.get('books', id);
-  if (!b) return null;
+  if (!isObj(b)) return null;
   fixBook(b);
+  S.readR = []; S.readHas = false;
   S.book = b; S.pre = null; S.preState = ''; S.preDoc = null;
   D.book = new Map(Object.entries(b.names));
   rebuildNameIdx();
@@ -1237,57 +1586,248 @@ async function loadBook(id){
   const [keys, pks] = await Promise.all([DB.keys('trans', id + ':'), DB.keys('kv', 'tp:' + id + ':')]);
   S.transSet = new Set(keys.map(k => +k.slice(id.length + 1)).filter(isNat));
   S.partSet = new Set(pks.map(k => +k.slice(id.length + 4)).filter(isNat));
+  await loadRead(b);
   return b;
 }
-async function openToc(id){
+
+/* ================= trang truyện ================= */
+// Trạng thái danh sách chương: khối 100 chương đang xem, thứ tự, chữ đang tìm
+const CH = { block:null, desc:LS.get('tc-desc', false) === true, q:'', introOpen:false, center:false, t:0 };
+const fmtN = n => (Number(n) || 0).toLocaleString('vi-VN');
+// Thông tin chung để vẽ trang truyện, cho cả truyện của bạn lẫn truyện có sẵn
+function bookView(){
+  if (S.pre){
+    const t = S.pre, inf = PRE_INFO.get(t.id) || {}, pos = prePos(t.id);
+    const cur = pos && pos.idx != null ? preClamp(t, pos.idx) : null;
+    return { pre:true, id:t.id, title:t.ten, zh:'', author:inf.author || '', status:inf.status || '', genres:inf.genres || [], intro:inf.intro || '', count:t.chuong.length, cur, read:preRead(t.id, cur) };
+  }
+  const b = S.book;
+  return { pre:false, id:b.id, title:bookTitle(b), zh:hasHan(b.zhTitle) ? String(b.zhTitle) : '', author:authorName(b), status:b.status || '', genres:b.genres || [], intro:b.intro || '',
+    count:b.count, cur:isNat(b.lastRead) ? b.lastRead : null, read:S.readR || [] };
+}
+const chTitle = (v, i) => v.pre ? ((S.pre.chuong[i] && S.pre.chuong[i].ten) || 'Chương ' + (i + 1)) : tocTitle(S.book, i);
+// Chuẩn bị trang truyện khi vừa mở: khối chứa chương đang đọc, xóa ô tìm, đóng hỏi xóa
+function resetBookPage(){
+  CH.block = null; CH.q = ''; CH.introOpen = false; CH.center = true;
+  $('#chFind').value = '';
+  $('#tDelAsk').hidden = true; $('#bActs').hidden = false;
+}
+// Sau khi vẽ: mở từ nút Mục lục thì cuộn tới chương đang đọc, không thì lên đầu trang
+function placeBookPage(){
+  const toList = NAV.toList, y = NAV.wantY; NAV.toList = false; NAV.wantY = null;
+  const cur = toList && $('#tocList li.cur');
+  if (cur) cur.scrollIntoView({ block:'center' }); else window.scrollTo(0, y || 0);
+  // Người dùng bàn phím: đưa tiêu điểm về tên truyện của trang mới (không cuộn)
+  try{ if (!anyModal()) $('#tTitle').focus({ preventScroll:true }); }catch(e){}
+}
+async function openToc(id, my){
   const b = (S.book && S.book.id === id) ? S.book : await loadBook(id);
-  if (!b){ renderLib(); return; }
+  if (my != null && my !== NAV.seq) return;
+  if (!b){ toast('Không thấy truyện này trong tủ.'); setHash('', true); renderLib(); return; }
+  S.pre = null;
   show('toc');
+  resetBookPage();
+  drawToc();
   if (!b.titles || b.titles.length !== b.count){
     // Dữ liệu cũ chưa có danh sách tiêu đề: đọc từng mẻ chương, chỉ giữ tiêu đề
     const titles = new Array(b.count).fill('');
     await DB.scan('chapters', b.id + ':', (k, c) => { const i = +k.slice(b.id.length + 1); if (i < b.count) titles[i] = (c && isStr(c.zhTitle) && c.zhTitle) || ''; });
     b.titles = titles;
+    TT.id = null; CF.key = '';   // bỏ đệm tiêu đề tạm
     DB.update('books', b.id, x => { if (!x) return; x.titles = titles; return x; }).catch(() => {});
   }
+  await loadRead(b);   // tab khác có thể vừa đọc thêm chương
+  if ((my != null && my !== NAV.seq) || S.view !== 'toc' || S.book !== b) return;
   if (!JOB.running){
     const start = (b.lastRead ?? 0) + 1;
     $('#tFrom').value = Math.min(start, b.count);
     $('#tTo').value = Math.min(start + 9, b.count);
   }
   drawToc();
-  const cur = $('#tocList li.cur'); if (cur) cur.scrollIntoView({ block:'center' });
-  else window.scrollTo(0, 0);
+  placeBookPage();
 }
 function drawToc(){
-  const b = S.book; if (!b || S.pre || S.view !== 'toc' || !b.titles) return;
-  $('#tTitle').textContent = bookTitle(b);
-  const au = authorName(b);
-  $('#tMeta').textContent = [hasHan(b.zhTitle) ? b.zhTitle : '', au, b.count + ' chương', (S.transSet.size || !WEB) ? 'Claude đã dịch ' + S.transSet.size + ' chương' : ''].filter(Boolean).join(' · ');
-  $('#tTo').max = $('#tFrom').max = b.count;
-  $('#tocList').innerHTML = b.titles.map((t, i) => '<li' + (i === b.lastRead ? ' class="cur"' : '') + '><button data-i="' + i + '"><span class="n">' + (i + 1) + '</span><span class="t">' + esc(tocTitle(b, i)) + '</span>' +
-    (S.transSet.has(i) ? '<span class="cl">Claude</span>' : S.partSet.has(i) ? '<span class="cl">Dịch dở</span>' : '') + '</button></li>').join('');
+  if (S.view !== 'toc' || !(S.pre || S.book)) return;
+  const v = bookView();
+  $('#viewToc').classList.toggle('pre', v.pre);
+  $('#bCover').innerHTML = '<span class="cvbox">' + coverHTML(v) + '</span>';
+  $('#tTitle').textContent = v.title;
+  $('#tZh').textContent = v.zh; $('#tZh').hidden = !v.zh;
+  $('#tReadL').textContent = v.cur != null ? 'Đọc tiếp · Chương ' + (v.cur + 1) : 'Đọc truyện';
+  const none = s => '<span class="dim">' + s + '</span>';
+  const nRead = rngCount(v.read, v.count), f = v.count ? nRead / v.count : 0;
+  const rows = [
+    ['Tác giả', v.author ? esc(v.author) : none('Chưa rõ')],
+    ['Trạng thái', v.status ? '<span class="stag st-' + esc(v.status) + '">' + esc(STATUS[v.status]) + '</span>' : none('Chưa rõ')],
+    ['Thể loại', v.genres.length ? '<span class="pills">' + v.genres.map(g => '<span class="pill">' + esc(g) + '</span>').join('') + '</span>' : none('Chưa có')],
+    ['Chương', esc(fmtN(v.count))],
+    ['Tiến độ', v.cur == null && !nRead ? none('Chưa đọc') :
+      (v.cur != null ? 'Đang đọc chương ' + esc(v.cur + 1) + ' · ' : '') + 'đã đọc ' + esc(fmtN(nRead)) + ' chương' +
+      '<span class="rbar"><span><i style="width:' + (f * 100).toFixed(1) + '%"></i></span>' + esc(pct(f)) + '</span>']
+  ];
+  if (!v.pre && (S.transSet.size || !WEB)) rows.push(['Claude dịch', esc(fmtN(S.transSet.size)) + ' chương']);
+  $('#bInfo').innerHTML = rows.map(([k, x]) => '<dt>' + k + '</dt><dd>' + x + '</dd>').join('');
+  drawIntro(v);
+  $('#tTo').max = $('#tFrom').max = v.count;
+  drawChList(v);
   updateClaudeUI();
 }
+// Giới thiệu: giữ xuống dòng; có chữ Hán thì convert; dài thì thu gọn với nút Xem thêm
+function drawIntro(v){
+  const box = $('#bIntro'), more = $('#bIntroMore');
+  const txt = String(v.intro || '').trim();
+  if (!txt){
+    box.classList.remove('clamp'); more.hidden = true;
+    box.innerHTML = '<p class="dim">' + (v.pre ? 'Chưa có giới thiệu.' : 'Chưa có giới thiệu. Bấm Sửa thông tin để thêm.') + '</p>';
+    return;
+  }
+  box.innerHTML = txt.split('\n').map(s => s.trim()).filter(Boolean).map(p => '<p>' + esc(D.loaded && hasHan(p) ? convertPlain(p) : p) + '</p>').join('');
+  box.classList.add('clamp');
+  const over = box.scrollHeight > box.clientHeight + 2;
+  box.classList.toggle('clamp', over && !CH.introOpen);
+  more.hidden = !over;
+  more.textContent = CH.introOpen ? 'Thu gọn' : 'Xem thêm';
+  more.setAttribute('aria-expanded', String(CH.introOpen));
+}
+// Tìm theo số chương hoặc tên chương (không cần gõ dấu), trên toàn bộ truyện, tối đa 200 kết quả
+const CF = { key:'', list:[] };   // đệm tên chương đã bỏ dấu
+function searchCh(v, q){
+  const fq = fold(q.trim()); if (!fq) return [];
+  const key = (v.pre ? 'p:' : 'b:') + v.id + '|' + D.ver;
+  if (CF.key !== key){ CF.key = key; CF.list = []; }
+  const out = [], num = /^\d+$/.test(fq) ? +fq - 1 : -1;
+  if (num >= 0 && num < v.count) out.push(num);
+  const raw = q.trim(), zh = !v.pre && S.book.titles;
+  for (let i = 0; i < v.count && out.length <= 200; i++){
+    if (i === num) continue;
+    let f = CF.list[i]; if (f == null) f = CF.list[i] = fold(chTitle(v, i));
+    if (f.includes(fq) || (zh && zh[i] && zh[i].includes(raw))) out.push(i);
+  }
+  return out;
+}
+function drawChList(v){
+  v = v || bookView();
+  const n = v.count, nb = Math.max(1, Math.ceil(n / 100));
+  $('#chCount').textContent = fmtN(n) + ' chương';
+  $('#chSortL').textContent = CH.desc ? 'Mới nhất' : 'Cũ nhất';
+  $('#chSort').setAttribute('aria-label', 'Thứ tự: ' + (CH.desc ? 'Mới nhất' : 'Cũ nhất') + '. Bấm để đổi');
+  if (CH.block == null || CH.block >= nb) CH.block = v.cur != null ? Math.min(nb - 1, Math.floor(v.cur / 100)) : (CH.desc ? nb - 1 : 0);
+  const blocks = $('#chBlocks'), note = $('#chNote'), q = CH.q.trim();
+  let idx = [];
+  if (q){
+    idx = searchCh(v, q);
+    const more = idx.length > 200; if (more) idx.length = 200;
+    blocks.hidden = true;
+    note.textContent = idx.length ? 'Tìm thấy ' + (more ? 'hơn 200 chương, đang hiện 200 chương đầu' : idx.length + ' chương') + '.' : 'Không thấy chương nào khớp.';
+  } else {
+    note.textContent = n ? '' : 'Truyện này chưa có chương nào.';
+    blocks.hidden = nb < 2;
+    const order = [...Array(nb).keys()]; if (CH.desc) order.reverse();
+    blocks.innerHTML = nb < 2 ? '' : order.map(k => '<button data-b="' + k + '" aria-pressed="' + (k === CH.block) + '">' + (k * 100 + 1) + '–' + Math.min(n, k * 100 + 100) + '</button>').join('');
+    for (let i = CH.block * 100, e = Math.min(n, i + 100); i < e; i++) idx.push(i);
+    if (CH.desc) idx.reverse();
+    if (CH.center){
+      const sel = blocks.querySelector('[aria-pressed="true"]');
+      if (sel) blocks.scrollLeft = sel.offsetLeft - (blocks.clientWidth - sel.offsetWidth) / 2;
+    }
+  }
+  CH.center = false;
+  const tag = i => v.pre ? '' : S.transSet.has(i) ? '<span class="cl">Claude</span>' : S.partSet.has(i) ? '<span class="cl part">Dịch dở</span>' : '';
+  $('#tocList').innerHTML = idx.map(i => {
+    const t = chTitle(v, i), cur = i === v.cur;
+    return '<li' + (cur ? ' class="cur"' : rngHas(v.read, i) ? ' class="rd"' : '') + '><button data-i="' + i + '" title="' + esc(t) + '"' + (cur ? ' aria-current="true"' : '') + '><span class="t">' + esc(t) + '</span>' + tag(i) + '</button></li>';
+  }).join('');
+}
+$('#chBlocks').addEventListener('click', e => { const b = e.target.closest('button[data-b]'); if (!b) return; CH.block = +b.dataset.b; drawChList(); });
+$('#chSort').addEventListener('click', () => {
+  CH.desc = !CH.desc; LS.set('tc-desc', CH.desc);
+  const v = bookView(), nb = Math.max(1, Math.ceil(v.count / 100));
+  CH.block = CH.desc ? nb - 1 : 0; CH.center = true;
+  drawChList(v);
+});
+$('#chFind').addEventListener('input', () => { clearTimeout(CH.t); CH.t = setTimeout(() => { CH.q = $('#chFind').value; CH.center = true; drawChList(); }, 150); });
 $('#tocList').addEventListener('click', e => {
   const b = e.target.closest('button[data-i]'); if (!b) return;
-  if (S.pre) openPre(S.pre.id, +b.dataset.i); else openBook(S.book.id, +b.dataset.i);
+  goTo(hashOf(S.pre ? S.pre.id : S.book.id, +b.dataset.i));
 });
-$('#tRead').addEventListener('click', () => { if (S.pre) openPre(S.pre.id); else openBook(S.book.id); });
+$('#tRead').addEventListener('click', () => { const v = bookView(); goTo(hashOf(v.id, v.cur != null ? v.cur : 0)); });
+$('#bIntroMore').addEventListener('click', () => { CH.introOpen = !CH.introOpen; drawIntro(bookView()); });
 $('#tAppend').addEventListener('click', () => openAdd('append'));
 $('#tNames').addEventListener('click', () => openMgr('book'));
+$('#tBackup').addEventListener('click', async e => {
+  const btn = e.currentTarget; if (btn.disabled || !S.book) return;
+  btn.disabled = true;
+  try{ await backupBook(S.book.id); }finally{ btn.disabled = false; }
+});
+// Xóa truyện: hỏi ngay trong trang (không dùng confirm)
+function askDel(on){
+  $('#tDelAsk').hidden = !on; $('#bActs').hidden = on;
+  (on ? $('#tDelNo') : $('#tDel')).focus();
+}
+$('#tDel').addEventListener('click', () => askDel(true));
+$('#tDelNo').addEventListener('click', () => askDel(false));
+$('#tDel2').addEventListener('click', async () => {
+  const b = S.book; if (!b) return;
+  const id = b.id;
+  $('#tDel2').disabled = true;
+  try{
+    // Truyện đang được Claude dịch: dừng việc dịch; bản dịch chỉ được ghi khi truyện còn (DB.putIf)
+    const stopJob = JOB.running && JOB.bookId === id;
+    if (stopJob){ JOB.dead = id; JOB.ctl.abort(); }
+    // Xóa bản ghi truyện trước, rồi mới xóa chương / bản dịch / chương đã đọc
+    await DB.del('books', id);
+    await DB.delPrefix('chapters', id + ':'); await DB.delPrefix('trans', id + ':'); await DB.delPrefix('kv', 'tp:' + id + ':'); await DB.del('kv', 'read:' + id);
+    const sc = LS.get('tc-scroll', {}); if (isObj(sc) && sc[id]){ delete sc[id]; LS.set('tc-scroll', sc); }
+    bcast({ t:'del', id });
+    S.book = null;
+    toast(stopJob ? 'Đã xóa truyện và dừng việc dịch truyện này.' : 'Đã xóa truyện');
+    goTo('', true);
+  }catch(e){ toast('Không xóa được truyện. Hãy thử lại.'); }
+  finally{ $('#tDel2').disabled = false; }
+});
+
+/* ---------- sửa thông tin truyện ---------- */
+let GEN = [];   // thể loại đang chọn trong khung Sửa thông tin
+function drawGenres(){
+  $('#iGenTags').innerHTML = GEN.map((g, i) => '<button type="button" class="gtag" data-gi="' + i + '" aria-label="Bỏ thể loại ' + esc(g) + '">' + esc(g) + '<span aria-hidden="true">×</span></button>').join('');
+  const have = new Set(GEN.map(fold));
+  $('#iGenSug').innerHTML = GENRES.filter(g => !have.has(fold(g))).map(g => '<button type="button" data-g="' + esc(g) + '">+ ' + esc(g) + '</button>').join('');
+}
+function addGenres(list){ GEN = cleanGenres(GEN.concat(list)); drawGenres(); }
+// Chữ đang gõ dở trong ô thể loại (dấu phẩy tách nhiều thể loại)
+const pendingGenres = () => $('#iGenIn').value.split(/[,，、;]/).map(s => s.trim()).filter(Boolean);
+$('#iGenIn').addEventListener('keydown', e => {
+  if (e.key === 'Enter'){ e.preventDefault(); addGenres(pendingGenres()); e.target.value = ''; }
+  else if (e.key === 'Backspace' && !e.target.value && GEN.length){ GEN.pop(); drawGenres(); }
+});
+// Bàn phím điện thoại thường không báo phím ",": xử lý theo chữ vừa gõ
+$('#iGenIn').addEventListener('input', e => {
+  const v = e.target.value;
+  if (/[,，、;]/.test(v)){ const parts = v.split(/[,，、;]/); e.target.value = parts.pop(); addGenres(parts.map(s => s.trim()).filter(Boolean)); }
+});
+$('#iGenTags').addEventListener('click', e => {
+  const b = e.target.closest('[data-gi]'); if (!b) return;
+  GEN.splice(+b.dataset.gi, 1); drawGenres(); $('#iGenIn').focus();
+});
+$('#iGenSug').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (b) addGenres([b.dataset.g]); });
 $('#tInfo').addEventListener('click', () => {
   const b = S.book;
   $('#iVi').value = b.viTitle || bookTitle(b);
   $('#iZh').textContent = 'Tên gốc: ' + b.zhTitle;
   $('#iAuthor').value = b.author || '';
+  $('#iStatus').value = okStatus(b.status) ? b.status : '';
+  GEN = cleanGenres(b.genres); $('#iGenIn').value = ''; drawGenres();
+  $('#iIntro').value = b.intro || '';
   $('#iNotes').value = b.notes || '';
   openModal('mInfo');
 });
 $('#iOk').addEventListener('click', async () => {
   const b = S.book;
-  const patch = { viTitle:$('#iVi').value.trim(), author:$('#iAuthor').value.trim(), notes:$('#iNotes').value.trim(), updatedAt:Date.now() };
+  const st = $('#iStatus').value;
+  const patch = { viTitle:$('#iVi').value.trim(), author:$('#iAuthor').value.trim(), notes:$('#iNotes').value.trim(),
+    status:okStatus(st) ? st : '', genres:cleanGenres(GEN.concat(pendingGenres())), intro:$('#iIntro').value.trim().slice(0, 20000), updatedAt:Date.now() };
   Object.assign(b, patch);
+  fixBook(b);
   try{ await DB.update('books', b.id, x => x ? Object.assign(x, patch) : undefined); }
   catch(e){ toast('Không lưu được thông tin truyện.'); return; }
   bcast({ t:'book', id:b.id });
@@ -1296,12 +1836,15 @@ $('#iOk').addEventListener('click', async () => {
 });
 
 /* ================= reader ================= */
-async function openBook(id, idx){
+async function openBook(id, idx, my){
   const b = (S.book && S.book.id === id) ? S.book : await loadBook(id);
-  if (!b){ renderLib(); return; }
+  if (my != null && my !== NAV.seq) return;
+  if (!b){ toast('Không thấy truyện này trong tủ.'); setHash('', true); renderLib(); return; }
   show('read');
-  const i = idx ?? b.lastRead ?? 0;
-  await loadChapter(Math.max(0, Math.min(i, b.count - 1)), idx == null);
+  const i = Math.max(0, Math.min(idx ?? b.lastRead ?? 0, b.count - 1));
+  if (idx != null && i !== idx) setHash(hashOf(id, i), true);
+  // Mở lại đúng chương đang đọc thì cuộn tới chỗ đọc dở (loadChapter chỉ cuộn nếu chỗ đã lưu thuộc chương này)
+  await loadChapter(i, true);
 }
 async function loadChapter(idx, restoreScroll){
   const b = S.book;
@@ -1314,8 +1857,9 @@ async function loadChapter(idx, restoreScroll){
   S.mode = (LS.get('tc-mode', 'cv') === 'cl' && (S.trans || S.tpart)) ? 'cl' : 'cv';
   if (jobHere()) S.mode = 'cl';
   if (!JOB.running) setNote('');
-  const sc = LS.get('tc-scroll', {})[b.id];
-  const y = restoreScroll && sc && sc.idx === idx ? sc.y : 0;
+  const sc = (LS.get('tc-scroll', {}) || {})[b.id];
+  const y = restoreScroll && sc && sc.idx === idx && isNum(sc.y) ? sc.y : 0;
+  markRead(b, idx);
   // Từ điển chưa nạp xong thì bản convert chỉ là chữ chờ: nhớ chỗ cuộn để cuộn lại khi vẽ xong
   S.wantY = !D.loaded && S.mode === 'cv' && y ? y : null;
   renderChapter();
@@ -1331,9 +1875,10 @@ const partTxt = t => t && t.partial ? 'phần ' + t.partial.part + '/' + t.parti
 const cvPara = (p, i) => '<p data-p="' + i + '">' + render(tokenize(p), true) + '</p>';
 function drawHead(){
   const b = S.book;
-  $('#rTitle').textContent = bookTitle(b);
+  $('#rTitle').textContent = $('#rBackT').textContent = bookTitle(b);
   const t = S.trans || S.tpart;
-  $('#rSub').textContent = (S.mode === 'cl' && t && t.title) ? t.title : chapterTitle(S.chap.zhTitle, S.idx);
+  // Từ điển chưa nạp xong: hiện tên chương như trong mục lục (chữ gốc), không hiện từng chữ Hán rời
+  $('#rSub').textContent = (S.mode === 'cl' && t && t.title) ? t.title : D.loaded ? chapterTitle(S.chap.zhTitle, S.idx) : tocTitle(b, S.idx);
 }
 function renderChapter(){
   if (S.pre){ renderPre(); return; }
@@ -1383,17 +1928,26 @@ function rerenderNames(keys){
     if (el) el.innerHTML = render(tokenize(p), true);
   });
 }
+// Chương trước / sau: thay mục lịch sử hiện tại (nút quay lại đưa về trang truyện, không lùi từng chương)
 function go(delta){
   const n = S.idx + delta;
-  if (S.pre){ if (n >= 0 && n < S.pre.chuong.length) loadPreChapter(n, false); return; }
+  if (S.pre){ if (n >= 0 && n < S.pre.chuong.length){ setHash(hashOf(S.pre.id, n), true); loadPreChapter(n, false); } return; }
   if (!S.book || n < 0 || n >= S.book.count) return;
+  setHash(hashOf(S.book.id, n), true);
   loadChapter(n, false);
 }
+const curBookId = () => S.pre ? S.pre.id : S.book ? S.book.id : null;
 document.addEventListener('click', e => {
   const nav = e.target.closest('[data-nav]');
-  if (nav){ const k = nav.dataset.nav; if (k === 'prev') go(-1); else if (k === 'next') go(1); else if (S.pre) openPreToc(S.pre.id); else openToc(S.book.id); return; }
+  if (nav){
+    const k = nav.dataset.nav;
+    if (k === 'prev') go(-1); else if (k === 'next') go(1);
+    else if (curBookId() != null){ NAV.toList = true; goTo(hashOf(curBookId())); }
+    return;
+  }
+  if (e.target.closest('#rBack')){ if (curBookId() != null) goTo(hashOf(curBookId())); return; }
   if (e.target.closest('[data-pre-retry]')){ if (S.pre) loadPreChapter(S.idx, false); return; }
-  const g = e.target.closest('[data-go="lib"]'); if (g){ renderLib(); return; }
+  const g = e.target.closest('[data-go="lib"]'); if (g){ goTo(''); return; }
   if (e.target.closest('[data-claude]')) translateCurrent();
   else if (e.target.closest('[data-claude-redo]')) translateCurrent(true);
 });
@@ -1407,7 +1961,7 @@ window.addEventListener('scroll', () => {
     scT = setTimeout(() => { if (S.pre && S.preState === 'ok') setPrePos(S.pre.id, { idx:S.idx, y:Math.round(window.scrollY) }); }, 400);
     return;
   }
-  scT = setTimeout(() => { if (!S.book) return; const all = LS.get('tc-scroll', {}); all[S.book.id] = { idx:S.idx, y:Math.round(window.scrollY) }; LS.set('tc-scroll', all); }, 400);
+  scT = setTimeout(() => { if (!S.book) return; const a = LS.get('tc-scroll', {}), all = isObj(a) ? a : {}; all[S.book.id] = { idx:S.idx, y:Math.round(window.scrollY) }; LS.set('tc-scroll', all); }, 400);
 }, { passive:true });
 
 /* ================= truyện có sẵn (chỉ bản web) =================
@@ -1423,8 +1977,14 @@ async function preFetch(u){
   return r.text();
 }
 const preOkPath = f => typeof f === 'string' && /^[\w\-.\/]+$/.test(f) && !f.includes('..') && !f.startsWith('/');
+// Danh sách truyện có sẵn (danh-sach.json) cùng thông tin truyện (thong-tin.json), tải song song; lỗi thì bỏ qua
 async function loadPreList(){
   if (!WEB || typeof fetch !== 'function') return [];
+  const [list, info] = await Promise.all([loadPreIndex(), loadPreInfo()]);
+  PRE_INFO = info;
+  return list;
+}
+async function loadPreIndex(){
   try{
     const data = JSON.parse((await preFetch('truyen/danh-sach.json')).replace(/^﻿/, ''));
     if (!data || !Array.isArray(data.truyen)) return [];
@@ -1434,42 +1994,64 @@ async function loadPreList(){
     })).filter(t => /^[\w\-]+$/.test(t.id) && t.chuong.length);
   }catch(e){ return []; }
 }
+// truyen/thong-tin.json: { "<id>": { tacgia, trangthai, theloai:[…], gioithieu } }. Kiểu sai thì bỏ trường đó.
+let PRE_INFO = new Map();
+async function loadPreInfo(){
+  const out = new Map();
+  try{
+    const data = JSON.parse((await preFetch('truyen/thong-tin.json')).replace(/^﻿/, ''));
+    if (!isObj(data)) return out;
+    for (const id of Object.keys(data)){
+      const x = data[id];
+      if (!/^[\w\-]+$/.test(id) || !isObj(x)) continue;
+      out.set(id, { author:isStr(x.tacgia) ? x.tacgia.trim().slice(0, 200) : '', status:normStatus(x.trangthai), genres:cleanGenres(x.theloai), intro:isStr(x.gioithieu) ? x.gioithieu.slice(0, 20000) : '' });
+    }
+  }catch(e){}
+  return out;
+}
 const findPre = id => PRE.find(t => t.id === id) || null;
-const prePos = id => (LS.get(PRE_KEY, {}) || {})[id] || null;
-function setPrePos(id, patch){ const all = LS.get(PRE_KEY, {}) || {}; all[id] = Object.assign({}, all[id], patch); LS.set(PRE_KEY, all); }
+const prePos = id => { const all = LS.get(PRE_KEY, {}); const p = isObj(all) ? all[id] : null; return isObj(p) ? p : null; };
+function setPrePos(id, patch){ const a = LS.get(PRE_KEY, {}), all = isObj(a) ? a : {}; all[id] = Object.assign({}, isObj(all[id]) ? all[id] : {}, patch); LS.set(PRE_KEY, all); }
 const preClamp = (t, i) => Math.max(0, Math.min(+i || 0, t.chuong.length - 1));
-function drawPreLib(nBooks){
+// Chương đã đọc của truyện có sẵn: localStorage "tc-pre-read" = { [id]: [[đầu, cuối], …] }; chưa có thì gợi ý từ chương đang đọc
+const PRE_READ = 'tc-pre-read';
+function preRead(id, cur){
+  const a = LS.get(PRE_READ, {}), r = isObj(a) ? a[id] : undefined;
+  return r === undefined ? rngSeed(cur) : cleanRanges(r, Infinity);
+}
+// Đọc lại bản mới nhất ngay trước khi ghi, chỉ thêm chương này (không đè chương tab khác vừa đánh dấu)
+function markPreRead(id, idx, cur){
+  const a = LS.get(PRE_READ, {}), all = isObj(a) ? a : {};
+  const has = all[id] !== undefined, base = has ? cleanRanges(all[id], Infinity) : rngSeed(cur);
+  if (has && rngHas(base, idx)) return;
+  all[id] = rngAdd(base, idx);
+  LS.set(PRE_READ, all);
+}
+function drawPreLib(){
   $('#preBox').hidden = !PRE.length;
   $('#ownHead').hidden = !PRE.length;
   $('#preBooks').innerHTML = PRE.map(t => {
-    const pos = prePos(t.id);
-    const read = pos && pos.idx != null ? 'Đang đọc chương ' + (preClamp(t, pos.idx) + 1) : 'Chưa đọc';
-    return '<div class="book" data-pre="' + esc(t.id) + '"><div style="min-width:0"><h2>' + esc(t.ten) + '</h2>' +
-      '<div class="meta">Truyện tiếng Việt · ' + t.chuong.length + ' chương · ' + read + '</div></div>' +
-      '<div class="acts"><button class="btn primary" data-act="read">' + (pos && pos.idx != null ? 'Đọc tiếp' : 'Đọc từ đầu') + '</button><button class="btn" data-act="toc">Mục lục</button></div></div>';
+    const inf = PRE_INFO.get(t.id) || {}, pos = prePos(t.id), n = t.chuong.length;
+    const cur = pos && pos.idx != null ? preClamp(t, pos.idx) : null;
+    return tileHTML('data-pre="' + esc(t.id) + '"', coverHTML({ id:t.id, title:t.ten, author:inf.author }), t.ten, inf.author || 'Truyện tiếng Việt · ' + n + ' chương', cur != null ? (cur + 1) / n * 100 : null);
   }).join('');
 }
-$('#preBooks').addEventListener('click', e => {
-  const btn = e.target.closest('button[data-act]'); if (!btn) return;
-  const id = btn.closest('.book').dataset.pre;
-  if (btn.dataset.act === 'read') openPre(id); else openPreToc(id);
-});
 function openPreToc(id){
-  const t = findPre(id); if (!t){ renderLib(); return; }
+  const t = findPre(id); if (!t){ setHash('', true); renderLib(); return; }
   S.book = null; S.pre = t; S.preState = ''; S.preDoc = null; preReq++;
   show('toc');
-  $('#tTitle').textContent = t.ten;
-  $('#tMeta').textContent = 'Truyện tiếng Việt · ' + t.chuong.length + ' chương';
-  const pos = prePos(id), cur = pos && pos.idx != null ? preClamp(t, pos.idx) : -1;
-  $('#tocList').innerHTML = t.chuong.map((c, i) => '<li' + (i === cur ? ' class="cur"' : '') + '><button data-i="' + i + '"><span class="n">' + (i + 1) + '</span><span class="t">' + esc(c.ten || ('Chương ' + (i + 1))) + '</span></button></li>').join('');
-  const el = $('#tocList li.cur'); if (el) el.scrollIntoView({ block:'center' }); else window.scrollTo(0, 0);
+  resetBookPage();
+  drawToc();
+  placeBookPage();
 }
 async function openPre(id, idx){
-  const t = findPre(id); if (!t){ renderLib(); return; }
+  const t = findPre(id); if (!t){ setHash('', true); renderLib(); return; }
   S.book = null; S.pre = t;
   show('read');
   const pos = prePos(id);
-  await loadPreChapter(preClamp(t, idx ?? (pos && pos.idx) ?? 0), idx == null);
+  const i = preClamp(t, idx ?? (pos && pos.idx) ?? 0);
+  if (idx != null && i !== idx) setHash(hashOf(id, i), true);
+  await loadPreChapter(i, true);
 }
 async function loadPreChapter(idx, restoreScroll){
   const t = S.pre; if (!t) return;
@@ -1488,6 +2070,7 @@ async function loadPreChapter(idx, restoreScroll){
   if (my !== preReq || S.pre !== t) return;
   S.preDoc = parsePre(md); S.preState = 'ok';
   renderPre();
+  markPreRead(t.id, idx, old && old.idx != null ? preClamp(t, old.idx) : null);
   const sameChap = old && old.idx === idx;
   setPrePos(t.id, { idx, y:sameChap ? (old.y || 0) : 0 });
   LS.set('tc-last', { view:'read', book:null, pre:t.id });
@@ -1504,7 +2087,7 @@ function renderPre(){
   const t = S.pre; if (!t || S.view !== 'read') return;
   closePopup();
   const ch = t.chuong[S.idx] || {}, n = t.chuong.length;
-  $('#rTitle').textContent = t.ten;
+  $('#rTitle').textContent = $('#rBackT').textContent = t.ten;
   $('#rSub').textContent = (S.preState === 'ok' && S.preDoc && S.preDoc.title) || ch.ten || '';
   $('#rPos').textContent = (S.idx + 1) + ' / ' + n;
   $$('[data-nav="prev"]').forEach(x => x.disabled = S.idx <= 0);
@@ -1565,6 +2148,7 @@ $('#rText').addEventListener('click', e => {
 document.addEventListener('click', e => {
   if (!popup.hidden && !popup.contains(e.target) && !e.target.closest('.w')) closePopup();
   if (!$('#panel').hidden && !$('#panel').contains(e.target) && !$('#gear').contains(e.target)) { $('#panel').hidden = true; $('#gear').setAttribute('aria-expanded', 'false'); }
+  if ($('#libTools').classList.contains('open') && !e.target.closest('#libTools, #bMore')) setMenu(false);
 });
 // Độ dài (1 hoặc 2 đơn vị UTF-16) của chữ đứng ngay trước / ngay sau vị trí i, để không cắt đôi chữ ngoài BMP như 𠮷
 const isHi = c => c >= '\uD800' && c <= '\uDBFF', isLo = c => c >= '\uDC00' && c <= '\uDFFF';
@@ -2055,7 +2639,8 @@ const pad2 = n => String(n).padStart(2, '0');
 const dateTag = () => { const d = new Date(); return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()); };
 const newBookId = () => 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 // Dựng file sao lưu từ nhiều mảnh nhỏ (từng bản ghi, gom thành Blob mỗi ~1MB) thay vì một chuỗi JSON khổng lồ.
-// Định dạng như cũ: { app:'thu-cac', v:1, at, books, chapters, trans, kho } + trường mới tpart (bản dịch dở, bản cũ bỏ qua).
+// Định dạng như cũ: { app:'thu-cac', v:1, at, books, chapters, trans, kho } + trường mới tpart (bản dịch dở) và read
+// (chương đã đọc); bản cũ bỏ qua hai trường này. Truyện có thể có thêm status, genres, intro.
 // ids: null = cả tủ; mảng id = chỉ các truyện đó (không kèm kho chung).
 async function buildBackup(ids){
   const blobs = []; let parts = [], size = 0;
@@ -2072,6 +2657,12 @@ async function buildBackup(ids){
   await dump('chapters', ids ? ks.map(k => k + ':') : [''], 'chapters');
   await dump('trans', ids ? ks.map(k => k + ':') : [''], 'trans');
   await dump('kv', ids ? ks.map(k => 'tp:' + k + ':') : ['tp:'], 'tpart');
+  // Chương đã đọc (kv read:<id>), trường mới "read": bản cũ bỏ qua
+  push('],"read":[');
+  let nr = 0;
+  const pushRead = (k, v) => { if (v !== undefined) push((nr++ ? ',' : '') + JSON.stringify([k, v])); };
+  if (ids){ for (const k of ks){ let v; try{ v = await DB.get('kv', 'read:' + k); }catch(e){} pushRead('read:' + k, v); } }
+  else await DB.scan('kv', 'read:', pushRead);
   let kho = {};
   if (!ids){ await flushKho(); try{ kho = cleanNames(await DB.get('kv', 'names:kho')); }catch(e){ kho = Object.fromEntries(D.kho); } }
   push('],"kho":' + JSON.stringify(kho) + '}');
@@ -2103,6 +2694,7 @@ async function backupBook(id){
 const ID_RE = /^[A-Za-z0-9_-]{1,80}$/;
 const KEY_RE = /^([A-Za-z0-9_-]{1,80}):(\d{6})$/;
 const TPK_RE = /^tp:([A-Za-z0-9_-]{1,80}):(\d{6})$/;
+const READ_RE = /^read:([A-Za-z0-9_-]{1,80})$/;
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 function cleanBook(k, v, cnt){
   if (!ID_RE.test(k) || !isObj(v)){ cnt.bad++; return null; }
@@ -2117,6 +2709,12 @@ function cleanBook(k, v, cnt){
   if (isNat(v.count)) b.count = v.count; else { cnt.bad++; b.count = -1; }   // -1: đếm lại theo chương trong file
   if (v.lastRead == null) b.lastRead = null; else if (isNat(v.lastRead)) b.lastRead = v.lastRead; else { cnt.bad++; b.lastRead = null; }
   for (const f of ['createdAt', 'updatedAt']){ if (!isNum(v[f])){ if (v[f] != null) cnt.bad++; b[f] = Date.now(); } }
+  // Trường tùy chọn: trạng thái, thể loại, giới thiệu
+  if (okStatus(v.status)) b.status = v.status;
+  else { if (v.status != null && v.status !== '') cnt.bad++; delete b.status; }
+  if (Array.isArray(v.genres)){ cnt.bad += v.genres.filter(g => !isStr(g)).length; b.genres = cleanGenres(v.genres); }
+  else if (v.genres != null) cnt.bad++;
+  if (v.intro != null && !isStr(v.intro)){ cnt.bad++; delete b.intro; }
   return b;
 }
 function cleanChap(v, cnt){ if (!isObj(v) || !isStr(v.zh)){ cnt.bad++; return null; } return { zhTitle:isStr(v.zhTitle) ? v.zhTitle : '', zh:v.zh }; }
@@ -2150,11 +2748,19 @@ function cleanBackup(data){
   group(data.chapters, KEY_RE, chaps, v => cleanChap(v, cnt));
   group(data.trans, KEY_RE, trans, v => cleanTrans(v, cnt, false));
   group(data.tpart, TPK_RE, tps, v => cleanTrans(v, cnt, true));
+  const reads = new Map();
+  for (const e of list(data.read)){
+    const p = pair(e); if (!p) continue;
+    const m = READ_RE.exec(p[0]);
+    if (!m || !books.has(m[1]) || !Array.isArray(p[1])){ cnt.bad++; continue; }
+    reads.set(m[1], p[1]);
+  }
   for (const b of books.values()){
     if (b.count < 0) b.count = (chaps.get(b.id) || []).reduce((m, [i]) => Math.max(m, i + 1), 0);
     if (b.lastRead != null && b.lastRead >= b.count) b.lastRead = b.count ? b.count - 1 : null;
+    if (reads.has(b.id)) reads.set(b.id, cleanRanges(reads.get(b.id), b.count));
   }
-  return { books, chaps, trans, tps, kho:cleanNames(data.kho, cnt), bad:cnt.bad };
+  return { books, chaps, trans, tps, reads, kho:cleanNames(data.kho, cnt), bad:cnt.bad };
 }
 // Bảng hỏi trong trang (không dùng confirm): trả về 'over' | 'keep' | 'copy', hoặc null nếu hủy
 let rsDone = null;
@@ -2208,7 +2814,7 @@ async function restoreBackup(data){
     if (have.has(id)){
       if (mode === 'keep'){ sum.kept++; continue; }
       if (mode === 'over'){
-        await DB.delPrefix('chapters', id + ':'); await DB.delPrefix('trans', id + ':'); await DB.delPrefix('kv', 'tp:' + id + ':');
+        await DB.delPrefix('chapters', id + ':'); await DB.delPrefix('trans', id + ':'); await DB.delPrefix('kv', 'tp:' + id + ':'); await DB.del('kv', 'read:' + id);
         sum.over++;
       } else {
         id = newBookId();
@@ -2219,6 +2825,7 @@ async function restoreBackup(data){
     await DB.putMany('chapters', (R.chaps.get(b.id) || []).map(([i, v]) => [ck(id, i), v]));
     await DB.putMany('trans', (R.trans.get(b.id) || []).map(([i, v]) => [ck(id, i), v]));
     await DB.putMany('kv', (R.tps.get(b.id) || []).map(([i, v]) => [tpk(id, i), v]));
+    if (R.reads.has(b.id)) await DB.put('kv', 'read:' + id, R.reads.get(b.id));
     await DB.put('books', id, rec);   // ghi truyện sau cùng: chỉ hiện trong tủ khi chương đã ghi xong
     if (id === b.id && have.has(id)) bcast({ t:'book', id });
   }
@@ -2235,16 +2842,17 @@ async function restoreBackup(data){
   D.ver++;
   bcast({ t:'lib' });
   toast(restoreSummary(sum, R.bad), 7000);
-  renderLib();
+  if (S.view === 'lib') renderLib();
 }
 $('#fRestore').addEventListener('change', async e => {
+  setMenu(false);
   const f = e.target.files[0]; e.target.value = '';
   if (!f) return;
   let data = null;
   try{ data = JSON.parse(await readFileText(f, 'utf-8')); }catch(err){ data = null; }
   if (!isObj(data) || data.app !== 'thu-cac'){ toast('File không phải bản sao lưu của Thư Các.'); return; }
   try{ await restoreBackup(data); }
-  catch(err){ toast('Khôi phục bị lỗi giữa chừng' + (err && err.name === 'QuotaExceededError' ? ': máy hết dung lượng lưu.' : '. Hãy thử lại.'), 6000); renderLib(); }
+  catch(err){ toast('Khôi phục bị lỗi giữa chừng' + (err && err.name === 'QuotaExceededError' ? ': máy hết dung lượng lưu.' : '. Hãy thử lại.'), 6000); if (S.view === 'lib') renderLib(); }
 });
 
 /* ================= settings panel ================= */
@@ -2282,6 +2890,8 @@ document.addEventListener('keydown', e => {
     const m = anyModal(); if (m){ closeModal(m.id); return; }
     if (!popup.hidden){ closePopup(); return; }
     if (!$('#panel').hidden){ $('#panel').hidden = true; return; }
+    if ($('#libTools').classList.contains('open')){ setMenu(false); $('#bMore').focus(); return; }
+    if (S.view === 'toc' && !$('#tDelAsk').hidden){ askDel(false); return; }
   }
   if (S.view !== 'read' || anyModal() || /INPUT|TEXTAREA|SELECT/.test(document.activeElement && document.activeElement.tagName)) return;
   if (e.key === 'ArrowLeft') go(-1);
@@ -2315,7 +2925,7 @@ async function reloadBook(id){
   let b;
   try{ b = await DB.get('books', id); }catch(e){ return; }
   if (!S.book || S.book.id !== id) return;
-  if (!b){ toast('Truyện này vừa bị xóa ở tab khác.'); renderLib(); return; }
+  if (!b){ toast('Truyện này vừa bị xóa ở tab khác.'); S.book = null; setHash('', true); renderLib(); return; }
   fixBook(b);
   const m = new Map(Object.entries(b.names));
   const keys = diffKeys(D.book, m), more = b.count !== S.book.count;
@@ -2333,7 +2943,7 @@ if (BC) BC.onmessage = e => {
   else if (m.t === 'book' && isStr(m.id)) reloadBook(m.id);
   else if (m.t === 'del' && isStr(m.id)){
     if (JOB.running && JOB.bookId === m.id){ JOB.dead = m.id; JOB.ctl.abort(); }
-    if (S.book && S.book.id === m.id){ toast('Truyện này vừa bị xóa ở tab khác.'); renderLib(); }
+    if (S.book && S.book.id === m.id){ toast('Truyện này vừa bị xóa ở tab khác.'); S.book = null; setHash('', true); renderLib(); }
     else if (S.view === 'lib') renderLib();
   } else if (m.t === 'lib' && S.view === 'lib') renderLib();
 };
@@ -2344,12 +2954,97 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pagehide', () => { flushKho(); });
 
+/* ================= điều hướng bằng hash =================
+   "" = tủ truyện, "#t-<id>" = trang truyện, "#t-<id>-c<N>" = chương N (đếm từ 1). Đổi trang bằng gán location.hash
+   nên nút quay lại của trình duyệt / điện thoại đưa về trang trước. Hash chỉ gồm chữ ASCII, số, gạch nối (yêu cầu của claude.ai). */
+const NAV = { key:'lib', seq:0, toList:false, ys:{}, wantY:null };
+// Chỗ cuộn do trang tự lo (trang đọc nhớ theo chương, hai màn kia theo mục lịch sử)
+try{ if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; }catch(e){}
+// Id thường (chữ, số, gạch nối ở giữa) giữ nguyên. Id khác, hoặc id có thể nhầm với đuôi "-cN", viết thành "-" + mã hex UTF-8:
+// id thường không bắt đầu bằng "-" nên hai kiểu không lẫn nhau.
+const PLAIN_ID = /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/;
+function encId(id){
+  id = String(id);
+  if (PLAIN_ID.test(id) && !id.includes('--') && !/-c\d+$/.test(id)) return id;
+  return '-' + [...new TextEncoder().encode(id)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function decId(s){
+  if (s[0] !== '-') return PLAIN_ID.test(s) ? s : null;
+  const hex = s.slice(1);
+  if (!/^(?:[0-9a-f]{2}){1,200}$/.test(hex)) return null;
+  try{ return new TextDecoder('utf-8', { fatal:true }).decode(new Uint8Array(hex.match(/../g).map(h => parseInt(h, 16)))); }catch(e){ return null; }
+}
+const hashOf = (id, idx) => id == null || id === '' ? '' : 't-' + encId(id) + (idx == null ? '' : '-c' + (idx + 1));
+function parseHash(h){
+  const m = /^t-(.+?)(?:-c([1-9]\d{0,6}))?$/.exec(String(h || '').replace(/^#/, ''));
+  const id = m && decId(m[1]);
+  if (!id) return { view:'lib' };
+  return m[2] ? { view:'read', id, idx:+m[2] - 1 } : { view:'toc', id };
+}
+const navKey = t => t.view === 'lib' ? 'lib' : t.view + '|' + t.id + '|' + (t.view === 'read' ? t.idx : '');
+const curHash = () => location.hash.replace(/^#/, '');
+function writeHash(h, replace){
+  try{
+    if (replace){ try{ location.replace(location.href.split('#')[0] + '#' + h); return; }catch(e){} }
+    location.hash = h;
+  }catch(e){}
+}
+// Cho hash khớp với trang đang hiện mà không mở lại trang (đổi chương bằng nút trước/sau, sửa hash sai…)
+function setHash(h, replace){
+  NAV.key = navKey(parseHash(h)); NAV.seq++;
+  if (curHash() !== h) writeHash(h, replace);
+}
+// Đi tới trang h: thêm một mục vào lịch sử (replace = thay mục hiện tại) rồi mở trang ngay, không chờ hashchange
+function goTo(h, replace){
+  if (curHash() !== h) writeHash(h, replace);
+  routeTo(parseHash(h));
+}
+let PRE_P = Promise.resolve([]);   // danh sách truyện có sẵn (đang tải)
+// Mở trang theo đích t. Trả về false nếu không mở được (đã chuyển về tủ truyện) hoặc đã có lệnh mở trang khác.
+// quiet: không báo khi không thấy truyện (lúc mở lại chỗ đọc cũ)
+// back: đi bằng nút quay lại / tiến của trình duyệt (hashchange): tủ truyện và trang truyện về đúng chỗ cuộn lúc rời đi.
+async function routeTo(t, quiet, back){
+  const key = navKey(t);
+  if (key === NAV.key) return true;
+  if (S.view === 'lib' || S.view === 'toc') NAV.ys[NAV.key] = Math.round(window.scrollY);
+  NAV.key = key;
+  const my = ++NAV.seq;
+  NAV.wantY = back && isNum(NAV.ys[key]) ? NAV.ys[key] : null;
+  closePopup();
+  if (t.view !== 'toc') NAV.toList = false;
+  if (t.view === 'lib'){
+    await renderLib();
+    if (my === NAV.seq) window.scrollTo(0, NAV.wantY || 0);
+    return true;
+  }
+  let kind = S.book && S.book.id === t.id ? 'own' : S.pre && S.pre.id === t.id ? 'pre' : null;
+  if (!kind){
+    let b = null;
+    try{ b = await DB.get('books', t.id); }catch(e){}
+    if (my !== NAV.seq) return false;
+    if (isObj(b)) kind = 'own';
+    else {
+      PRE = await PRE_P;
+      if (my !== NAV.seq) return false;
+      if (findPre(t.id)) kind = 'pre';
+    }
+  }
+  if (!kind){
+    if (!quiet) toast('Không thấy truyện này. Có thể truyện đã bị xóa.');
+    setHash('', true); await renderLib(); return false;
+  }
+  if (kind === 'own') await (t.view === 'toc' ? openToc(t.id, my) : openBook(t.id, t.idx, my));
+  else if (t.view === 'toc') openPreToc(t.id);
+  else await openPre(t.id, t.idx);
+  return S.view === t.view;
+}
+
 /* ================= boot ================= */
 // Thứ tự: mở dữ liệu → hiện tủ truyện / trang đang đọc ngay → nạp từ điển theo từng khối → vẽ lại
 function afterDicts(){
   updateDictStat();
   if (S.view === 'lib') renderLib();
-  else if (S.view === 'toc' && !S.pre) drawToc();
+  else if (S.view === 'toc') drawToc();
   else if (S.view === 'read' && !S.pre && S.book){
     if (S.mode !== 'cv') drawHead();
     else { const y = S.wantY; S.wantY = null; if (y != null){ renderChapter(); window.scrollTo(0, y); } else rerenderKeep(); }
@@ -2358,6 +3053,8 @@ function afterDicts(){
 (async function boot(){
   const last = LS.get('tc-last', {});   // đọc trước khi show() ghi đè
   applySettings();
+  // Tải sớm phần chữ có dấu tiếng Việt của font bìa (Google Fonts tách theo bảng chữ), để bìa không hiện dấu lệch lúc đầu
+  try{ if (document.fonts && document.fonts.load) document.fonts.load('700 20px "Playfair Display"', 'Thế Đấu Ậ ữ').catch(() => {}); }catch(e){}
   const waitT = setTimeout(() => { $('#dbWait').hidden = false; }, 800);
   const memT = setTimeout(() => { $('#dbMem').hidden = false; }, 8000);
   await DB.open();
@@ -2367,21 +3064,23 @@ function afterDicts(){
   show('lib');
   $('#libEmpty').hidden = true;
   await loadKho();
-  const prePromise = loadPreList();
+  PRE_P = loadPreList();
   buildDicts(bootProg).catch(() => {}).then(() => { D.loaded = true; D.ver++; dictDone(); afterDicts(); });
   let shown = false;
-  if (last.pre && (last.view === 'read' || last.view === 'toc')){
-    PRE = await prePromise;
-    if (findPre(last.pre)){ shown = true; if (last.view === 'read') await openPre(last.pre); else openPreToc(last.pre); }
-  }
-  if (!shown && last.book && (last.view === 'read' || last.view === 'toc')){
-    const b = await loadBook(last.book);
-    if (b){ shown = true; if (last.view === 'read') await openBook(b.id); else await openToc(b.id); }
+  const want = parseHash(location.hash);
+  if (want.view !== 'lib') shown = await routeTo(want);
+  else if (!curHash() && (last.view === 'read' || last.view === 'toc') && (isStr(last.pre) || isStr(last.book))){
+    // Không có hash: mở lại chỗ đang đọc như trước, rồi ghi hash (tủ truyện nằm ngay dưới trong lịch sử)
+    const id = isStr(last.pre) ? last.pre : last.book;
+    shown = await routeTo({ view:last.view, id, idx:null }, true);
+    if (shown && (S.view === 'read' || S.view === 'toc')) setHash(S.view === 'read' ? hashOf(id, S.idx) : hashOf(id), false);
   }
   S.booting = false;
-  if (!shown) await renderLib();
-  PRE = await prePromise;
+  if (!shown && S.view === 'lib') await renderLib();
+  window.addEventListener('hashchange', () => routeTo(parseHash(location.hash), false, true));
+  PRE = await PRE_P;
   if (S.view === 'lib') drawPreLib();
+  else if (S.view === 'toc' && S.pre) drawToc();
 })();
 $('#dbMem').addEventListener('click', () => DB.useMem());
 (async function connect(){
