@@ -18,7 +18,7 @@ ICON="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 
 {
   printf '%s\n' '<!doctype html>' '<html lang="vi">' '<head>' \
     '<meta charset="utf-8">' \
-    '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' \
+    '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">' \
     '<meta name="description" content="Thư Các: đọc truyện Trung convert, sửa name, chỉnh màu chữ, ngay trên trình duyệt.">' \
     '<meta name="theme-color" content="#ebe5d5">' \
     "<link rel=\"icon\" href=\"$ICON\">" \

@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="description" content="Thư Các: đọc truyện Trung convert, sửa name, chỉnh màu chữ, ngay trên trình duyệt.">
 <meta name="theme-color" content="#ebe5d5">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23b8323c'/%3E%3Ctext x='32' y='46' font-size='38' text-anchor='middle' fill='white' font-family='serif'%3E%E6%9B%B8%3C/text%3E%3C/svg%3E">
@@ -268,9 +268,10 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 .rhead .rback{display:block; min-width:0; max-width:75%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left}
 .rhead h1{font-family:var(--font-title); font-weight:700; font-size:clamp(20px, 3.4vw, 30px); color:var(--muted); margin:0; line-height:1.3; text-wrap:balance}
 .rhead p{margin:6px 0 0; color:var(--muted); font-size:clamp(15px, 2vw, 19px); text-wrap:balance}
-.cnav{background:var(--band); padding-block:10px}
+.cnav{background:var(--band); padding-block:4px}
 .cnav .wrap{display:flex; justify-content:space-between; align-items:center; gap:8px}
-.cnav button{background:none; border:0; color:var(--link); font-weight:600; font-size:17px; display:inline-flex; align-items:center; gap:4px; padding:4px 2px}
+.cnav button{background:none; border:0; color:var(--link); font-weight:600; font-size:17px; display:inline-flex; align-items:center; gap:4px; padding:10px 6px; min-height:44px; border-radius:8px; white-space:nowrap}
+@media (max-width:420px){.cnav button{font-size:15px; padding-inline:2px; gap:2px}}
 .cnav button:disabled{color:var(--muted); opacity:.5; cursor:default}
 .cnav button svg{width:18px; height:18px; stroke-width:2.6}
 .modebar{display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding-block:14px 4px}
@@ -289,6 +290,14 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 #rText .stream::after{content:"▍"; color:var(--link); animation:blink 1s steps(2) infinite}
 @keyframes blink{50%{opacity:0}}
 @media (prefers-reduced-motion: reduce){#rText .stream::after{animation:none}}
+/* vuốt ngang để chuyển chương: chữ nhích theo tay, chương mới trượt vào nhẹ */
+#rText.snap{transition:transform .2s ease, opacity .2s ease}
+#rText.sl-n{animation:slN .24s ease-out}
+#rText.sl-p{animation:slP .24s ease-out}
+@keyframes slN{from{transform:translateX(40px); opacity:0}to{transform:none; opacity:1}}
+@keyframes slP{from{transform:translateX(-40px); opacity:0}to{transform:none; opacity:1}}
+@media (prefers-reduced-motion: reduce){#rText.snap{transition:none}#rText.sl-n,#rText.sl-p{animation:none}}
+#bSug{margin-left:auto; padding:6px 12px; font-size:13px}
 .placeholder{border:1px dashed color-mix(in srgb, var(--rf) 30%, transparent); border-radius:10px; padding:22px; font-family:var(--font-ui); font-size:15px; display:grid; gap:12px; justify-items:start}
 
 /* ---------- khối phụ dùng chung (Claude dịch nhiều chương…) ---------- */
@@ -323,8 +332,22 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 #popup .prow .wide{grid-column:span 2; gap:4px; font-weight:500}
 #popup .pbot{display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,.18)}
 #popup .pbot button{background:none; border:0; color:var(--on-teal); font-weight:600; display:inline-flex; align-items:center; gap:6px; padding:10px 12px; font-size:15px}
+#popup .prow.p3{grid-template-columns:34px 1fr 36px 36px 36px}
+#popup :focus-visible{outline:2px solid #fff; outline-offset:-3px}
 @media (max-width:560px){
-  #popup{position:fixed; left:0 !important; right:0; top:auto !important; bottom:0; width:auto; border-radius:12px 12px 0 0; padding-bottom:env(safe-area-inset-bottom, 0px); padding-left:env(safe-area-inset-left, 0px); padding-right:env(safe-area-inset-right, 0px)}
+  /* tấm trượt đáy; bottom / max-height do placePopup đặt theo bàn phím ảo */
+  #popup{position:fixed; left:0 !important; right:0; top:auto !important; bottom:0; width:auto; max-height:100vh; overflow-y:auto; overscroll-behavior:contain; border-radius:12px 12px 0 0; padding-bottom:env(safe-area-inset-bottom, 0px); padding-left:env(safe-area-inset-left, 0px); padding-right:env(safe-area-inset-right, 0px); box-shadow:0 -8px 30px rgba(0,0,0,.3)}
+}
+/* vùng chạm ≥ 44px trên điện thoại và màn cảm ứng */
+@media (max-width:560px), (pointer:coarse){
+  #popup .ptop button{min-height:44px; padding:6px 10px}
+  #popup .ptop .shr{margin:0; min-width:44px; justify-content:center; padding:4px 8px; border:4px solid transparent; background-clip:padding-box; border-radius:10px}
+  #popup .prow{grid-template-columns:34px 1fr 44px 44px; min-height:44px}
+  #popup .prow.p3{grid-template-columns:34px 1fr 44px 44px 44px}
+  #popup .prow input{padding:10px 8px}
+  #popup .prow .ib{min-height:44px}
+  #popup .pbot button{min-height:44px}
+  .aligns button{min-height:44px}
 }
 
 /* ---------- settings panel ---------- */
@@ -337,9 +360,10 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 .sw{display:grid; grid-template-columns:repeat(7, 1fr); gap:4px}
 .sw button{aspect-ratio:1.25; border:1px solid rgba(0,0,0,.25); border-radius:2px; font-family:var(--font-title); font-size:15px; padding:0}
 .sw button[aria-pressed="true"]{outline:3px solid #1a9ab0; outline-offset:1px}
-.stepper{display:flex; align-items:center; gap:6px}
-.stepper button{background:none; border:0; font-size:26px; line-height:1; width:30px; font-weight:700}
-.stepper output{border:2px solid #333; padding:3px 8px; min-width:62px; text-align:center; font-weight:600; font-variant-numeric:tabular-nums}
+.stepper{display:flex; align-items:center; gap:2px}
+.stepper button{background:none; border:0; font-size:26px; line-height:1; width:44px; height:44px; padding:0; border-radius:8px; font-weight:700; display:grid; place-items:center}
+.stepper button:hover{background:rgba(0,0,0,.07)}
+.stepper output{border:2px solid #333; padding:3px 6px; min-width:54px; text-align:center; font-weight:600; font-variant-numeric:tabular-nums}
 .steps{display:flex; justify-content:space-between; align-items:center; gap:6px}
 #panel select{width:100%; padding:6px; border:1px solid #888; border-radius:2px; background:#fff}
 .aligns{display:grid; grid-template-columns:repeat(6,1fr); gap:4px}
@@ -371,11 +395,44 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 .nlist{display:grid; gap:4px; max-height:46vh; overflow:auto; border:1px solid var(--line); border-radius:8px; padding:6px}
 .nrow{display:grid; grid-template-columns:minmax(70px, 34%) 1fr auto; gap:6px; align-items:center}
 .nrow .zh{font-size:16px; overflow-wrap:anywhere}
-.nrow input{padding:5px 8px; border:1px solid var(--line); border-radius:5px; background:var(--card); min-width:0; width:100%}
-.nrow button{background:none; border:0; color:var(--danger); padding:4px 6px}
+.nrow input{padding:7px 8px; border:1px solid var(--line); border-radius:5px; background:var(--card); min-width:0; width:100%}
+.nrow button{background:none; border:0; color:var(--danger); padding:0; min-width:44px; min-height:44px; border-radius:6px; font-size:16px}
+.nrow button:hover{background:color-mix(in srgb, var(--danger) 12%, transparent)}
+#mName{z-index:55}   /* mở từ thẻ Gợi ý: nằm trên khung Quản lý name */
+.gpane{display:grid; gap:12px; min-width:0}
+/* thẻ Gợi ý name */
+.sscope{display:flex; width:100%}
+.sscope button{flex:1 1 0; min-width:0; min-height:40px; white-space:normal; line-height:1.25; padding:6px 8px}
+.slist{display:grid; max-height:50vh; overflow:auto; border:1px solid var(--line); border-radius:8px}
+.slist:empty{display:none}
+.srow{display:grid; grid-template-columns:3.2em minmax(0,1fr) auto; gap:4px 10px; align-items:center; padding:8px 10px; border-bottom:1px solid var(--line)}
+.srow:last-child{border-bottom:0}
+.scnt{font-variant-numeric:tabular-nums; font-weight:600; color:var(--muted); text-align:right; font-size:14px}
+.smain{min-width:0}
+.smain .szh{font-size:17px}
+.smain b{font-weight:600}
+.sme{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.sacts{display:flex; gap:6px}
+.sacts .btn{padding:7px 10px; font-size:13px}
+@media (max-width:560px){
+  .srow{grid-template-columns:2.6em minmax(0,1fr)}
+  .sacts{grid-column:2}
+  .sacts .btn{min-height:44px; padding:8px 14px; font-size:14px}
+}
+/* khung Thêm truyện: lọc dòng rác */
+.chk{display:flex; align-items:center; gap:10px; min-height:44px; font-size:14px; font-weight:500; cursor:pointer}
+.chk input{width:20px; height:20px; margin:0; accent-color:var(--link); flex:none}
+.junkx summary{cursor:pointer}
+.junkx ul{margin:6px 0 0; padding-left:20px; max-height:26vh; overflow:auto; display:grid; gap:2px}
+.junkx li{overflow-wrap:anywhere}
+/* khung Từ điển: chuỗi rác */
+.jbox{display:grid; gap:8px; padding-top:12px; border-top:1px solid var(--line)}
+.jbox textarea{min-height:150px}
 .tabs{display:flex; gap:6px}
 .tabs button{border:1px solid var(--line); background:var(--card); padding:6px 12px; border-radius:6px}
 .tabs button[aria-pressed="true"]{background:var(--link); color:var(--rb); border-color:transparent}
+.tabs button:disabled{opacity:.5; cursor:not-allowed}
+#gSug{flex:none; white-space:nowrap}
 .drow{display:grid; grid-template-columns:1fr auto; gap:4px 12px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line)}
 .drow:last-child{border-bottom:0}
 .drow b{font-weight:600}
@@ -393,7 +450,14 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 .gsug button{border:1px dashed color-mix(in srgb, var(--rf) 32%, transparent); background:none; border-radius:999px; padding:3px 10px; font-size:13px; color:var(--muted)}
 .gsug button:hover{color:var(--rf); border-style:solid}
 
-#toast{position:fixed; z-index:60; left:50%; transform:translateX(-50%); bottom:calc(90px + env(safe-area-inset-bottom, 0px)); background:#2b2b2b; color:#fff; padding:10px 16px; border-radius:8px; font-size:14px; max-width:calc(100vw - 32px); box-shadow:0 6px 18px rgba(0,0,0,.25)}
+#toast{position:fixed; z-index:60; left:0; right:0; margin-inline:auto; width:max-content; bottom:calc(90px + env(safe-area-inset-bottom, 0px)); background:#2b2b2b; color:#fff; padding:10px 16px; border-radius:8px; font-size:14px; max-width:calc(100vw - 32px); box-shadow:0 6px 18px rgba(0,0,0,.25); display:flex; flex-wrap:wrap; align-items:center; gap:0 14px}
+#toast{pointer-events:none}   /* chạm xuyên qua dải thông báo (trừ nút Hoàn tác) để vẫn bấm được chữ bên dưới */
+#toast .tact{pointer-events:auto; background:none; border:0; color:#ffb48f; font-weight:700; font-size:14px; padding:6px 4px; margin-block:-10px; min-height:44px; border-radius:6px}
+#toast .tact:focus-visible{outline:2px solid #fff; outline-offset:0}
+/* điện thoại: ô nhập từ 16px để iOS không tự phóng to khi chạm vào */
+@media (max-width:600px), (pointer:coarse){
+  input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=file]):not([type=range]),select,textarea{font-size:16px !important}
+}
 #job{position:fixed; z-index:35; left:50%; transform:translateX(-50%); top:calc(10px + env(safe-area-inset-top, 0px)); background:#123d45; color:#fff; padding:8px 8px 8px 14px; border-radius:999px; display:flex; gap:10px; align-items:center; font-size:14px; max-width:calc(100vw - 32px); box-shadow:0 6px 18px rgba(0,0,0,.25)}
 #job span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
 #job button{background:#e05561; color:#fff; border:0; border-radius:999px; padding:4px 12px; font-weight:600; flex:none}
@@ -490,6 +554,7 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
           <button class="dbtn sm" id="tInfo"><svg class="i"><use href="#i-edit"/></svg>Sửa thông tin</button>
           <button class="dbtn sm" id="tAppend"><svg class="i"><use href="#i-plus"/></svg>Thêm chương</button>
           <button class="dbtn sm" id="tNames">Name truyện này</button>
+          <button class="dbtn sm" id="tSug">Gợi ý name</button>
           <button class="dbtn sm" id="tBackup">Sao lưu truyện này</button>
           <button class="dbtn sm warnb" id="tDel">Xóa truyện</button>
         </div>
@@ -555,6 +620,7 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
         </div>
         <button class="btn claude-only" id="bClaude">Claude dịch chương này</button>
         <span class="cnote" id="cNote"></span>
+        <button class="btn" id="bSug" title="Tìm các cụm chữ Hán lặp lại nhiều lần để thêm name">Gợi ý name</button>
       </div>
       <div class="saved-note" id="savedNote" hidden></div>
       <article id="rText" lang="vi"></article>
@@ -577,7 +643,7 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
   </div>
   <div class="prow"><b>hv</b><input id="pHv" aria-label="Hán Việt thường"><button class="ib" data-save="pHv:book" title="Lưu name cho truyện này"><svg class="i"><use href="#i-ok"/></svg></button><button class="ib" data-save="pHv:kho" title="Lưu vào kho name chung"><svg class="i"><use href="#i-save"/></svg></button></div>
   <div class="prow"><b>HV</b><input id="pHV" aria-label="Hán Việt viết hoa"><button class="ib" data-save="pHV:book" title="Lưu name cho truyện này"><svg class="i"><use href="#i-ok"/></svg></button><button class="ib" data-save="pHV:kho" title="Lưu vào kho name chung"><svg class="i"><use href="#i-save"/></svg></button></div>
-  <div class="prow" style="grid-template-columns:34px 1fr 36px 36px 36px"><b>zw</b><input id="pZw" readonly aria-label="Chữ Trung"><a class="ib" id="pGg" target="_blank" rel="noopener" title="Google Dịch"><span style="font-weight:700;font-size:13px">A文</span></a><button class="ib" id="pCopy" title="Sao chép chữ Trung"><svg class="i"><use href="#i-copy"/></svg></button><a class="ib" id="pBd" target="_blank" rel="noopener" title="Tìm trên Baidu"><svg class="i"><use href="#i-find"/></svg></a></div>
+  <div class="prow p3"><b>zw</b><input id="pZw" readonly aria-label="Chữ Trung"><a class="ib" id="pGg" target="_blank" rel="noopener" title="Google Dịch"><span style="font-weight:700;font-size:13px">A文</span></a><button class="ib" id="pCopy" title="Sao chép chữ Trung"><svg class="i"><use href="#i-copy"/></svg></button><a class="ib" id="pBd" target="_blank" rel="noopener" title="Tìm trên Baidu"><svg class="i"><use href="#i-find"/></svg></a></div>
   <div class="prow"><b>Tr</b><input id="pTr" readonly aria-label="Nghĩa hiện tại"><button class="ib wide" id="pEdit" title="Mở bảng chỉnh name"><svg class="i"><use href="#i-edit"/></svg>Sửa</button></div>
   <div class="prow"><b>tc</b><input id="pTc" placeholder="cụm từ tùy chọn" aria-label="Cụm từ tùy chọn"><button class="ib" data-save="pTc:book" title="Lưu name cho truyện này"><svg class="i"><use href="#i-ok"/></svg></button><button class="ib" data-save="pTc:kho" title="Lưu vào kho name chung"><svg class="i"><use href="#i-save"/></svg></button></div>
   <div class="pbot">
@@ -626,6 +692,10 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
     <label class="fld"><span>File .txt (chọn được nhiều file)</span><input type="file" id="aFile" accept=".txt,text/plain" multiple></label>
     <label class="fld"><span>Bảng mã của file</span><select id="aEnc"><option value="auto">Tự nhận (UTF-8, GB18030 hoặc Big5)</option><option value="utf-8">UTF-8</option><option value="gb18030">GB18030 / GBK</option><option value="big5">Big5 (phồn thể)</option><option value="utf-16le">UTF-16</option></select></label>
     <label class="fld"><span>Hoặc dán chữ Trung vào đây</span><textarea id="aText" placeholder="第一章 ……"></textarea><span class="hint">Mỗi dòng tiêu đề 第…章 / 第…回 (có thể có 第…卷 hoặc 正文 đứng trước) được tính là một chương mới.</span></label>
+    <div>
+      <label class="chk"><input type="checkbox" id="aJunk" checked>Lọc dòng rác của web</label>
+      <div class="small muted" id="aJunkInfo" role="status"></div>
+    </div>
     <div class="small muted" id="aInfo" role="status"></div>
   </div>
   <div class="foot"><button class="btn" data-close>Hủy</button><button class="btn primary" id="aOk">Thêm vào tủ</button></div>
@@ -648,15 +718,29 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 <div class="modal" id="mMgr" hidden><div class="sheet" role="dialog" aria-labelledby="mMgrH">
   <header><h2 id="mMgrH">Quản lý name</h2><button class="x" data-close aria-label="Đóng">×</button></header>
   <div class="body">
-    <div class="tabs"><button id="gBook" aria-pressed="true">Truyện này</button><button id="gKho" aria-pressed="false">Kho chung</button></div>
-    <input id="gFind" class="sel-in" placeholder="Tìm theo chữ Trung hoặc tiếng Việt" aria-label="Tìm name">
-    <div class="nlist" id="gList"></div>
-    <div class="small muted" id="gInfo"></div>
+    <div class="tabs"><button id="gBook" aria-pressed="true">Truyện này</button><button id="gKho" aria-pressed="false">Kho chung</button><button id="gSug" aria-pressed="false">Gợi ý</button></div>
+    <div class="gpane" id="gNames">
+      <input id="gFind" class="sel-in" placeholder="Tìm theo chữ Trung hoặc tiếng Việt" aria-label="Tìm name">
+      <div class="nlist" id="gList"></div>
+      <div class="small muted" id="gInfo"></div>
+    </div>
+    <div class="gpane" id="gSugBox" hidden>
+      <div class="seg sscope" id="sScope" role="group" aria-label="Tìm cụm lặp trong">
+        <button data-sc="chap" aria-pressed="true">Chương này</button><button data-sc="near" aria-pressed="false">20 chương gần nhất</button><button data-sc="all" aria-pressed="false">Cả truyện</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="sNoVp">Chỉ hiện cụm chưa có trong VietPhrase</label>
+      <div class="small muted" id="sNote" role="status"></div>
+      <div class="prog" id="sProgW" hidden><i id="sProg"></i></div>
+      <div class="slist" id="sList"></div>
+    </div>
   </div>
-  <div class="foot">
+  <div class="foot" id="gFoot">
     <button class="btn danger" id="gClear" style="margin-right:auto">Xóa tất cả</button>
     <label class="btn filebtn">Nhập Names.txt<input type="file" id="gImport" accept=".txt,text/plain"></label>
     <button class="btn" id="gExport">Xuất Names.txt</button>
+  </div>
+  <div class="foot" id="sFoot" hidden>
+    <button class="btn" id="sUnskip" hidden></button>
   </div>
 </div></div>
 
@@ -666,6 +750,11 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
     <p class="small muted" style="margin:0">Thứ tự tra khi convert: Name truyện này → Kho name chung → Vietphrase (cụm dài nhất) → Hán Việt từng chữ. File tải lên dùng định dạng <code>中文=nghĩa1/nghĩa2</code>, một dòng một mục.</p>
     <div id="dRows"></div>
     <div class="small muted" id="dProg" role="status"></div>
+    <div class="jbox">
+      <label class="fld"><span>Chuỗi rác cần lọc</span><textarea id="dJunk" spellcheck="false" lang="zh"></textarea>
+        <span class="hint">Dùng khi thêm truyện có đánh dấu "Lọc dòng rác của web". Mỗi dòng một chuỗi. Dòng ngắn mà phần lớn là các chuỗi này sẽ bị xóa cả dòng. Đường link (http, www., tên miền như biquge.com) và chữ chèn trong ngoặc như [醉][露][网] luôn được lọc.</span></label>
+      <div class="row"><button class="btn" id="dJunkSave">Lưu danh sách</button><button class="linkbtn small" id="dJunkDef">Dùng lại danh sách mặc định</button></div>
+    </div>
   </div>
   <div class="foot"><button class="btn danger" id="dReset" style="margin-right:auto">Gỡ từ điển đã tải lên</button><button class="btn primary" data-close>Xong</button></div>
 </div></div>
@@ -1245,7 +1334,19 @@ function applySettings(){
 
 /* ================= small UI helpers ================= */
 let toastT = 0;
-function toast(msg, ms){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, ms || 3200); }
+// act = { label, fn }: thêm một nút trong dải thông báo (ví dụ Hoàn tác)
+function toast(msg, ms, act){
+  const t = $('#toast');
+  t.textContent = '';
+  const s = document.createElement('span'); s.textContent = msg; t.appendChild(s);
+  if (act){
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'tact'; b.textContent = act.label;
+    b.addEventListener('click', () => { clearTimeout(toastT); t.hidden = true; act.fn(); });
+    t.appendChild(b);
+  }
+  t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, ms || 3200);
+}
 const onClose = {};   // id modal → hàm chạy khi modal đóng (bấm ×, Hủy, nền tối, Esc)
 function openModal(id){ $('#' + id).hidden = false; closePopup(); }
 function closeModal(id){ const m = $('#' + id); if (m.hidden) return; m.hidden = true; const f = onClose[id]; if (f) f(); }
@@ -1435,6 +1536,66 @@ function splitChapters(text){
   });
   return out;
 }
+/* ---------- lọc dòng rác của web (khi thêm truyện) ----------
+   Danh sách chuỗi rác sửa được trong khung Từ điển (kv "junk": mảng chuỗi; chưa có thì dùng danh sách mặc định).
+   Dòng ngắn (< 60 ký tự) mà phần lớn là rác thì bỏ cả dòng; dòng tiêu đề chương không bao giờ bị bỏ.
+   Giữa dòng chỉ xóa đường link và cụm chèn trong ngoặc (【笔趣阁】, （本章完）, [醉][露][网]…). */
+const JUNK_DEF = ['上一章','下一章','上一页','下一页','返回目录','返回书页','加入书签','投推荐票','求推荐票','求月票','求收藏','本章完','章节报错','天才一秒记住','手机阅读','最新章节','请记住本书','首发域名','笔趣阁','本书首发','最快更新','无弹窗','免费阅读','未完待续','手机用户请浏览','更优质的阅读体验','阅读体验更好','记住网址','本站地址'];
+const JUNK = { list:null, re:null, ver:0 };
+const cleanJunkList = a => [...new Set((Array.isArray(a) ? a : []).filter(isStr).map(s => s.trim().slice(0, 100)).filter(Boolean))].slice(0, 500);
+async function junkList(){
+  if (!JUNK.list){
+    let v; try{ v = await DB.get('kv', 'junk'); }catch(e){}
+    JUNK.list = Array.isArray(v) ? cleanJunkList(v) : JUNK_DEF.slice();
+  }
+  return JUNK.list;
+}
+function setJunk(list){ JUNK.list = list; JUNK.re = null; JUNK.ver++; }
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const URL_CH = "[A-Za-z0-9._~:/?#@!$&'*+,;=%-]";
+function junkRules(list){
+  // Chuỗi toàn ký tự ASCII (như "www.", "biquge") thì tính luôn phần tên miền / đường dẫn dính liền
+  const lit = list.map(s => /^[\x21-\x7e]+$/.test(s) ? '[A-Za-z0-9.-]{0,30}' + reEsc(s) + URL_CH + '{0,200}' : reEsc(s));
+  const OB = '[\\[【〔［(（〈<]', CB = '[\\]】〕］)）〉>]', IN = '[^\\[\\]【】〔〕［］()（）〈〉<>\\n]';
+  const parts = [
+    '(?:' + OB + '[^\\s\\[\\]【】〔〕［］()（）〈〉<>]{1,2}' + CB + '){2,}',   // [醉][露][网]
+    '(?:https?:\\/\\/|www\\.)' + URL_CH + '+',
+    '(?<![A-Za-z0-9.-])(?:[A-Za-z0-9-]+\\.)+(?:com|net|org|cc|la|info|cn|tw|me|co|io|xyz|top|vip|biz)(?![A-Za-z0-9])(?:\\/' + URL_CH + '*)?'   // biquge.com
+  ];
+  if (lit.length) parts.unshift(OB + IN + '{0,30}?(?:' + lit.join('|') + ')' + IN + '{0,30}?' + CB);   // 【笔趣阁 www.xxx.com】, （本章完）
+  const mid = parts.join('|'), all = [mid].concat(lit).join('|');
+  return { any:new RegExp(all, 'u'), all:new RegExp(all, 'gu'), mid:new RegExp(mid, 'gu') };
+}
+async function junkRe(){ if (!JUNK.re) JUNK.re = junkRules(await junkList()); return JUNK.re; }
+const HEAD1 = new RegExp(HEAD_RE.source, 'u');   // một dòng tiêu đề chương
+const sigLen = s => s.replace(/[^\p{L}\p{N}]+/gu, '').length;
+// Trả về chữ đã lọc, số dòng bỏ (drop), số dòng bị xóa cụm chèn giữa dòng (cut) và vài dòng đã bỏ để xem lại
+async function stripJunk(text){
+  const J = await junkRe();
+  const lines = text.replace(/\r\n?/g, '\n').split('\n');
+  let drop = 0, cut = 0, t0 = performance.now();
+  const ex = [];
+  for (let i = 0; i < lines.length; i++){
+    if ((i & 2047) === 0 && performance.now() - t0 > 30){ await tick(); t0 = performance.now(); }
+    const s = lines[i];
+    if (!s || !J.any.test(s)) continue;
+    const t = s.trim();
+    if (t.length < 60 && !HEAD1.test(t)){
+      const a = sigLen(t);
+      if (a && sigLen(t.replace(J.all, ' ')) <= a * .3){ lines[i] = null; drop++; if (ex.length < 30) ex.push(t); continue; }
+    }
+    const c = s.replace(J.mid, '');
+    if (c !== s){ lines[i] = c; cut++; }
+  }
+  return { text:drop || cut ? lines.filter(x => x !== null).join('\n') : text, drop, cut, ex };
+}
+function drawJunkInfo(j, has){
+  const box = $('#aJunkInfo');
+  if (!j || !has){ box.textContent = ''; return; }
+  if (!j.drop && !j.cut){ box.textContent = 'Không thấy dòng rác nào.'; return; }
+  const s = 'Đã lọc ' + fmtN(j.drop) + ' dòng rác' + (j.cut ? ' và ' + fmtN(j.cut) + ' chỗ chèn chữ rác giữa dòng' : '') + '.';
+  box.innerHTML = j.ex.length ? '<details class="junkx"><summary>' + esc(s) + ' Xem các dòng đã bỏ</summary><ul>' + j.ex.map(x => '<li lang="zh">' + esc(x) + '</li>').join('') + '</ul></details>' : esc(s);
+}
 function openAdd(mode){
   addMode = mode;
   $('#mAddH').textContent = mode === 'new' ? 'Thêm truyện' : 'Thêm chương vào "' + bookTitle(S.book) + '"';
@@ -1442,31 +1603,41 @@ function openAdd(mode){
   $('#aOk').textContent = mode === 'new' ? 'Thêm vào tủ' : 'Thêm chương';
   ['#aTitle','#aAuthor','#aText'].forEach(s => $(s).value = '');
   $('#aFile').value = ''; $('#aInfo').textContent = ''; $('#aInfo').classList.remove('warn');
+  $('#aJunk').checked = true; $('#aJunkInfo').textContent = '';
+  setJunk(null);   // đọc lại danh sách rác (có thể vừa sửa ở tab khác)
   addCache = null;
   openModal('mAdd');
 }
-// Kết quả đọc + chia chương được nhớ lại: bấm "Thêm" dùng luôn kết quả của bước xem trước nếu file / bảng mã / chữ dán không đổi
+// Kết quả đọc + chia chương được nhớ lại: bấm "Thêm" dùng luôn kết quả của bước xem trước nếu file / bảng mã / chữ dán / lọc rác không đổi
 let addCache = null, adding = false;
-function addKey(){ return { enc:$('#aEnc').value, files:[...$('#aFile').files], text:$('#aText').value }; }
+function addKey(){ return { enc:$('#aEnc').value, files:[...$('#aFile').files], text:$('#aText').value, junk:$('#aJunk').checked, jv:JUNK.ver }; }
 const sameFile = (a, b) => a === b || (a.name === b.name && a.size === b.size && a.lastModified === b.lastModified);
-const sameAddKey = (a, b) => a.enc === b.enc && a.text === b.text && a.files.length === b.files.length && a.files.every((f, i) => sameFile(f, b.files[i]));
+const sameAddKey = (a, b) => a.enc === b.enc && a.text === b.text && a.junk === b.junk && a.jv === b.jv && a.files.length === b.files.length && a.files.every((f, i) => sameFile(f, b.files[i]));
 function gatherAdd(){
   const key = addKey();
   if (addCache && sameAddKey(addCache.key, key)) return addCache.p;
   const p = (async () => {
     let chapters = [], auto = 0;
     const encs = new Set(); let weak = false;
+    const junk = { drop:0, cut:0, ex:[] };
+    const clean = async t => {
+      if (!key.junk) return t;
+      const r = await stripJunk(t);
+      junk.drop += r.drop; junk.cut += r.cut;
+      r.ex.forEach(x => { if (junk.ex.length < 30) junk.ex.push(x); });
+      return r.text;
+    };
     for (const f of key.files){
       const r = await readFileDetect(f, key.enc);
       if (key.enc === 'auto') encs.add(r.enc);
       if (r.weak) weak = true;
-      const chs = splitChapters(r.text);
+      const chs = splitChapters(await clean(r.text));
       if (chs.auto) auto += chs.length;
       if (chs.length === 1 && !chs[0].zhTitle) chs[0].zhTitle = f.name.replace(/\.txt$/i, '');
       chapters = chapters.concat(chs);
     }
-    if (key.text.trim()){ const chs = splitChapters(key.text); if (chs.auto) auto += chs.length; chapters = chapters.concat(chs); }
-    return { chs:chapters, auto, encs:[...encs], weak };
+    if (key.text.trim()){ const chs = splitChapters(await clean(key.text)); if (chs.auto) auto += chs.length; chapters = chapters.concat(chs); }
+    return { chs:chapters, auto, encs:[...encs], weak, junk:key.junk ? junk : null };
   })();
   addCache = { key, p };
   p.catch(() => { if (addCache && addCache.p === p) addCache = null; });
@@ -1492,11 +1663,13 @@ async function previewAdd(){
     if (addCache && addCache.p === p){
       info.textContent = addInfoText(r);
       info.classList.toggle('warn', !!r.chs.length && (r.weak || !r.chs.some(c => hasHan(c.zh))));
+      drawJunkInfo(r.junk, r.chs.length > 0);
     }
-  }catch(e){ info.textContent = 'Không đọc được file. Hãy thử chọn lại hoặc đổi bảng mã.'; info.classList.add('warn'); }
+  }catch(e){ info.textContent = 'Không đọc được file. Hãy thử chọn lại hoặc đổi bảng mã.'; info.classList.add('warn'); $('#aJunkInfo').textContent = ''; }
 }
 $('#aFile').addEventListener('change', previewAdd);
 $('#aEnc').addEventListener('change', previewAdd);
+$('#aJunk').addEventListener('change', previewAdd);
 $('#aText').addEventListener('input', () => { clearTimeout(previewAdd.t); previewAdd.t = setTimeout(previewAdd, 400); });
 $('#aOk').addEventListener('click', async () => {
   if (adding) return;
@@ -1764,6 +1937,7 @@ $('#tRead').addEventListener('click', () => { const v = bookView(); goTo(hashOf(
 $('#bIntroMore').addEventListener('click', () => { CH.introOpen = !CH.introOpen; drawIntro(bookView()); });
 $('#tAppend').addEventListener('click', () => openAdd('append'));
 $('#tNames').addEventListener('click', () => openMgr('book'));
+$('#tSug').addEventListener('click', () => openMgr('sug'));
 $('#tBackup').addEventListener('click', async e => {
   const btn = e.currentTarget; if (btn.disabled || !S.book) return;
   btn.disabled = true;
@@ -1786,7 +1960,7 @@ $('#tDel2').addEventListener('click', async () => {
     if (stopJob){ JOB.dead = id; JOB.ctl.abort(); }
     // Xóa bản ghi truyện trước, rồi mới xóa chương / bản dịch / chương đã đọc
     await DB.del('books', id);
-    await DB.delPrefix('chapters', id + ':'); await DB.delPrefix('trans', id + ':'); await DB.delPrefix('kv', 'tp:' + id + ':'); await DB.del('kv', 'read:' + id);
+    await DB.delPrefix('chapters', id + ':'); await DB.delPrefix('trans', id + ':'); await DB.delPrefix('kv', 'tp:' + id + ':'); await DB.del('kv', 'read:' + id); await DB.del('kv', 'sugskip:' + id);
     const sc = LS.get('tc-scroll', {}); if (isObj(sc) && sc[id]){ delete sc[id]; LS.set('tc-scroll', sc); }
     bcast({ t:'del', id });
     S.book = null;
@@ -1867,17 +2041,58 @@ async function loadChapter(idx, restoreScroll){
   S.mode = (LS.get('tc-mode', 'cv') === 'cl' && (S.trans || S.tpart)) ? 'cl' : 'cv';
   if (jobHere()) S.mode = 'cl';
   if (!JOB.running) setNote('');
-  const sc = (LS.get('tc-scroll', {}) || {})[b.id];
-  const y = restoreScroll && sc && sc.idx === idx && isNum(sc.y) ? sc.y : 0;
+  clearTimeout(scT);
+  const all = LS.get('tc-scroll', {}), sc = isObj(all) && isObj(all[b.id]) ? all[b.id] : null;
+  const pos = restoreScroll && sc && sc.idx === idx ? sc : null;
   markRead(b, idx);
-  // Từ điển chưa nạp xong thì bản convert chỉ là chữ chờ: nhớ chỗ cuộn để cuộn lại khi vẽ xong
-  S.wantY = !D.loaded && S.mode === 'cv' && y ? y : null;
+  // Từ điển chưa nạp xong thì bản convert chỉ là chữ chờ: nhớ chỗ đọc để cuộn lại khi vẽ xong
+  S.wantY = !D.loaded && S.mode === 'cv' && pos ? pos : null;
   renderChapter();
   b.lastRead = idx; b.updatedAt = Date.now();
   // Chỉ ghi phần thay đổi lên bản mới nhất trong IndexedDB (tab khác có thể vừa lưu name)
   DB.update('books', b.id, x => { if (!x) return; x.lastRead = idx; x.updatedAt = b.updatedAt; return x; }).catch(() => {});
   LS.set('tc-last', { view:'read', book:b.id });
-  window.scrollTo(0, y);
+  if (pos && !S.wantY) restorePos(pos); else { RP.n++; window.scrollTo(0, 0); }
+}
+/* ---------- chỗ đọc theo đoạn ----------
+   Lưu { idx, y, p, f }: p = đoạn đầu tiên đang thấy ở mép trên màn hình, f = phần đoạn đó đã cuộn qua (0–1).
+   Cỡ chữ, font hay bề ngang đổi thì vẫn về đúng đoạn. Dữ liệu cũ chỉ có y (pixel) thì cuộn theo y. */
+const RP = { n:0 };
+const readParas = () => $$('#rText > p:not(.muted)');
+function posRec(){
+  const rec = { idx:S.idx, y:Math.round(window.scrollY) };
+  const ps = readParas(); if (!ps.length) return rec;
+  let lo = 0, hi = ps.length - 1, k = ps.length - 1;
+  while (lo <= hi){ const m = (lo + hi) >> 1; if (ps[m].getBoundingClientRect().bottom > 0){ k = m; hi = m - 1; } else lo = m + 1; }
+  const r = ps[k].getBoundingClientRect();
+  rec.p = k; rec.f = r.top >= 0 || !r.height ? 0 : Math.min(1, Math.round(-r.top / r.height * 1000) / 1000);
+  return rec;
+}
+function posTarget(pos){
+  if (isNat(pos.p) && isNum(pos.f) && (pos.p > 0 || pos.f > 0)){
+    const ps = readParas(), el = ps[Math.min(pos.p, ps.length - 1)];
+    if (el){ const r = el.getBoundingClientRect(); return r.top + window.scrollY + Math.max(0, Math.min(1, pos.f)) * r.height; }
+  }
+  return isNum(pos.y) ? pos.y : 0;
+}
+// Cuộn tới chỗ đã lưu; font tải xong (chữ đổi cao) thì cuộn lại một lần nếu người đọc chưa tự cuộn
+function restorePos(pos){
+  const my = ++RP.n;
+  window.scrollTo(0, Math.round(posTarget(pos)));
+  const at = window.scrollY;
+  try{
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => {
+      if (my !== RP.n || S.view !== 'read' || Math.abs(window.scrollY - at) > 2) return;
+      const y = Math.round(posTarget(pos));
+      if (Math.abs(y - window.scrollY) > 1) window.scrollTo(0, y);
+    }).catch(() => {});
+  }catch(e){}
+}
+// Đổi cỡ chữ, giãn dòng, font, căn lề khi đang đọc: giữ nguyên đoạn đang đọc
+function keepPlace(fn){
+  const a = S.view === 'read' ? posRec() : null;
+  fn();
+  if (a && (a.p > 0 || a.f > 0)) restorePos(a);
 }
 const okTrans = t => isObj(t) && isStr(t.text);
 const fmtAt = at => { const d = new Date(isNum(at) ? at : 0); return isNaN(d) ? '' : d.toLocaleString('vi-VN', { hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit', year:'numeric' }); };
@@ -1941,10 +2156,10 @@ function rerenderNames(keys){
 // Chương trước / sau: thay mục lịch sử hiện tại (nút quay lại đưa về trang truyện, không lùi từng chương)
 function go(delta){
   const n = S.idx + delta;
-  if (S.pre){ if (n >= 0 && n < S.pre.chuong.length){ setHash(hashOf(S.pre.id, n), true); loadPreChapter(n, false); } return; }
-  if (!S.book || n < 0 || n >= S.book.count) return;
+  if (S.pre){ if (n >= 0 && n < S.pre.chuong.length){ setHash(hashOf(S.pre.id, n), true); return loadPreChapter(n, false); } return null; }
+  if (!S.book || n < 0 || n >= S.book.count) return null;
   setHash(hashOf(S.book.id, n), true);
-  loadChapter(n, false);
+  return loadChapter(n, false);
 }
 const curBookId = () => S.pre ? S.pre.id : S.book ? S.book.id : null;
 document.addEventListener('click', e => {
@@ -1964,15 +2179,87 @@ document.addEventListener('click', e => {
 $('#mCv').addEventListener('click', () => { S.mode = 'cv'; LS.set('tc-mode', 'cv'); S.wantY = null; renderChapter(); });
 $('#mCl').addEventListener('click', () => { S.mode = 'cl'; LS.set('tc-mode', 'cl'); renderChapter(); });
 let scT = 0;
+// Lưu chỗ đọc (không lưu khi chương chưa hiện chữ thật: đang tải, đang chờ từ điển)
+function savePos(){
+  clearTimeout(scT);
+  if (S.view !== 'read') return;
+  if (S.pre){ if (S.preState === 'ok'){ const r = posRec(); RP.last = Object.assign({ bk:S.pre.id }, r); setPrePos(S.pre.id, r); } return; }
+  if (!S.book || (S.mode === 'cv' && !D.loaded)) return;
+  const a = LS.get('tc-scroll', {}), all = isObj(a) ? a : {}, r = posRec();
+  RP.last = Object.assign({ bk:S.book.id }, r);
+  all[S.book.id] = r; LS.set('tc-scroll', all);
+}
+// Xoay điện thoại / đổi bề ngang cửa sổ khi đang đọc: về lại đoạn đang đọc (chỉ đổi chiều cao, như khi bàn phím bật, thì thôi)
+let lastW = window.innerWidth;
+function keepPlaceOnResize(){
+  const w = window.innerWidth;
+  if (w === lastW) return;
+  lastW = w;
+  const a = RP.last;
+  if (S.view === 'read' && popup.hidden && a && a.bk === curBookId() && a.idx === S.idx){ clearTimeout(scT); restorePos(a); }
+}
 window.addEventListener('scroll', () => {
   if (S.view !== 'read' || !(S.book || S.pre)) return;
   clearTimeout(scT);
-  if (S.pre){
-    scT = setTimeout(() => { if (S.pre && S.preState === 'ok') setPrePos(S.pre.id, { idx:S.idx, y:Math.round(window.scrollY) }); }, 400);
-    return;
-  }
-  scT = setTimeout(() => { if (!S.book) return; const a = LS.get('tc-scroll', {}), all = isObj(a) ? a : {}; all[S.book.id] = { idx:S.idx, y:Math.round(window.scrollY) }; LS.set('tc-scroll', all); }, 400);
+  scT = setTimeout(savePos, 400);
 }, { passive:true });
+
+/* ---------- vuốt ngang trên vùng chữ để chuyển chương ----------
+   Lệch ngang ≥ 64px và ngang > 1,25 lần dọc. Bỏ qua khi đang bôi chọn chữ, đang phóng to trang, chạm ở sát mép màn hình
+   (cử chỉ quay lại của máy), hoặc khi bảng Name / bảng cài đặt / hộp thoại đang mở. Không chặn sự kiện chạm,
+   nên chạm vào từ vẫn mở bảng Name và cuộn dọc vẫn như thường. */
+const SW = { on:false, x:0, y:0, lock:'' };
+const reduceMotion = () => { try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } };
+const hasSel = () => { try{ const s = window.getSelection(); return !!s && !s.isCollapsed && String(s).trim() !== ''; }catch(e){ return false; } };
+const swipeOff = () => S.view !== 'read' || !popup.hidden || !$('#panel').hidden || !!anyModal() || hasSel() ||
+  (!!window.visualViewport && window.visualViewport.scale > 1.05);
+function swipeEnd(){
+  const box = $('#rText');
+  SW.on = false;
+  if (!box.style.transform && !box.style.opacity) return;
+  box.classList.add('snap');
+  box.style.transform = ''; box.style.opacity = '';
+  setTimeout(() => box.classList.remove('snap'), 220);
+}
+function swipeGo(d){
+  const total = S.pre ? S.pre.chuong.length : S.book ? S.book.count : 0, n = S.idx + d;
+  if (n < 0 || n >= total){ toast(d > 0 ? 'Đây là chương cuối.' : 'Đây là chương đầu.'); return; }
+  const p = go(d);
+  if (reduceMotion()) return;
+  Promise.resolve(p).then(() => {
+    const box = $('#rText');
+    box.classList.remove('sl-n', 'sl-p'); void box.offsetWidth;
+    box.classList.add(d > 0 ? 'sl-n' : 'sl-p');
+  }).catch(() => {});
+}
+$('#rText').addEventListener('animationend', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('sl-n', 'sl-p'); });
+$('#rText').addEventListener('touchstart', e => {
+  SW.on = false;
+  if (e.touches.length !== 1 || swipeOff()) return;
+  const t = e.touches[0], w = document.documentElement.clientWidth;
+  if (t.clientX < 24 || t.clientX > w - 24) return;
+  SW.on = true; SW.x = t.clientX; SW.y = t.clientY; SW.lock = '';
+}, { passive:true });
+$('#rText').addEventListener('touchmove', e => {
+  if (!SW.on) return;
+  if (e.touches.length !== 1){ swipeEnd(); return; }
+  const t = e.touches[0], dx = t.clientX - SW.x, dy = t.clientY - SW.y;
+  if (!SW.lock && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) SW.lock = Math.abs(dx) > 1.25 * Math.abs(dy) ? 'x' : 'y';
+  if (SW.lock === 'y'){ swipeEnd(); return; }
+  if (SW.lock === 'x' && !reduceMotion()){
+    const box = $('#rText');
+    box.style.transform = 'translateX(' + Math.max(-56, Math.min(56, dx * .3)).toFixed(1) + 'px)';
+    box.style.opacity = String(Math.max(.55, 1 - Math.abs(dx) / 600));
+  }
+}, { passive:true });
+$('#rText').addEventListener('touchend', e => {
+  if (!SW.on) return;
+  const t = e.changedTouches[0], dx = t.clientX - SW.x, dy = t.clientY - SW.y;
+  const ok = SW.lock === 'x' && Math.abs(dx) >= 64 && Math.abs(dx) > 1.25 * Math.abs(dy) && !swipeOff();
+  if (ok){ const box = $('#rText'); box.style.transform = ''; box.style.opacity = ''; SW.on = false; swipeGo(dx < 0 ? 1 : -1); }
+  else swipeEnd();
+}, { passive:true });
+$('#rText').addEventListener('touchcancel', swipeEnd, { passive:true });
 
 /* ================= truyện có sẵn (chỉ bản web) =================
    Truyện tiếng Việt nằm sẵn trong repo (truyen/danh-sach.json + các file .md). Lần nào mở cũng lấy bản mới từ server,
@@ -2068,7 +2355,7 @@ async function loadPreChapter(idx, restoreScroll){
   const my = ++preReq;
   const old = prePos(t.id);
   S.idx = idx; S.preState = 'loading'; S.preDoc = null;
-  clearTimeout(scT);
+  clearTimeout(scT); RP.n++;
   renderPre();
   if (!restoreScroll) window.scrollTo(0, 0);
   let md;
@@ -2082,9 +2369,10 @@ async function loadPreChapter(idx, restoreScroll){
   renderPre();
   markPreRead(t.id, idx, old && old.idx != null ? preClamp(t, old.idx) : null);
   const sameChap = old && old.idx === idx;
-  setPrePos(t.id, { idx, y:sameChap ? (old.y || 0) : 0 });
+  // Cùng chương: giữ chỗ đọc đã lưu (y, p, f); chương khác: về đầu chương
+  setPrePos(t.id, sameChap ? { idx } : { idx, y:0, p:0, f:0 });
   LS.set('tc-last', { view:'read', book:null, pre:t.id });
-  window.scrollTo(0, restoreScroll && sameChap ? (old.y || 0) : 0);
+  if (restoreScroll && sameChap) restorePos(old); else { RP.n++; window.scrollTo(0, 0); }
 }
 function parsePre(md){
   const lines = String(md).replace(/^﻿/, '').replace(/\r/g, '').split('\n');
@@ -2138,8 +2426,10 @@ function fillPopup(){
   const pe = $('#rText p[data-p="' + P.p + '"]');
   if (pe) $$('.w', pe).forEach(x => { if (+x.dataset.s < P.e && +x.dataset.e > P.s) x.classList.add('sel'); });
 }
+const SHEET_MQ = matchMedia('(max-width:560px)');
 function placePopup(){
-  if (matchMedia('(max-width:560px)').matches){ popup.style.left = ''; popup.style.top = ''; return; }
+  if (SHEET_MQ.matches){ popup.style.left = ''; popup.style.top = ''; fitSheet(); revealSel(); return; }
+  popup.style.bottom = popup.style.maxHeight = ''; $('#viewRead').style.paddingBottom = '';
   const a = $('#rText .w.sel'); if (!a) return;
   const r = a.getBoundingClientRect(), w = popup.offsetWidth, h = popup.offsetHeight;
   let left = r.left + window.scrollX - 20;
@@ -2148,7 +2438,38 @@ function placePopup(){
   if (r.bottom + h + 12 > window.innerHeight && r.top - h - 12 > 0) top = r.top + window.scrollY - h - 8;
   popup.style.left = left + 'px'; popup.style.top = top + 'px';
 }
-function closePopup(){ if (popup.hidden) return; popup.hidden = true; $$('#rText .w.sel').forEach(x => x.classList.remove('sel')); }
+// Tấm trượt đáy (điện thoại): khi bàn phím ảo bật, visualViewport thấp đi; đẩy tấm trượt lên trên bàn phím
+// và không cho cao quá phần màn hình còn thấy. Thêm khoảng trống cuối trang để từ ở đoạn cuối vẫn cuộn lên được.
+function fitSheet(){
+  const vv = window.visualViewport;
+  let kb = 0, vh = window.innerHeight;
+  if (vv){ kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)); vh = vv.height; }
+  popup.style.bottom = kb ? kb + 'px' : '';
+  popup.style.maxHeight = Math.max(180, Math.round(vh - 12)) + 'px';
+  $('#viewRead').style.paddingBottom = popup.offsetHeight + 'px';
+}
+// Cuộn để từ đang chọn nằm phía trên tấm trượt (và không bị khuất ở mép trên)
+function revealSel(){
+  const sel = $$('#rText .w.sel'); if (!sel.length || popup.hidden) return;
+  let top = Infinity, bot = -Infinity;
+  sel.forEach(x => { const r = x.getBoundingClientRect(); top = Math.min(top, r.top); bot = Math.max(bot, r.bottom); });
+  const vv = window.visualViewport, vTop = (vv ? vv.offsetTop : 0) + 12, sTop = popup.getBoundingClientRect().top - 16;
+  let d = 0;
+  if (bot > sTop) d = bot - sTop + Math.min(72, Math.max(0, (sTop - vTop - (bot - top)) / 3));
+  else if (top < vTop) d = top - vTop;
+  if (Math.abs(d) >= 1) window.scrollBy({ top:Math.round(d), behavior:reduceMotion() ? 'auto' : 'smooth' });
+}
+if (window.visualViewport){
+  const vvFit = () => { if (!popup.hidden && SHEET_MQ.matches) fitSheet(); };
+  window.visualViewport.addEventListener('resize', vvFit);
+  window.visualViewport.addEventListener('scroll', vvFit);
+}
+function closePopup(){
+  if (popup.hidden) return;
+  popup.hidden = true;
+  popup.style.bottom = popup.style.maxHeight = ''; $('#viewRead').style.paddingBottom = '';
+  $$('#rText .w.sel').forEach(x => x.classList.remove('sel'));
+}
 $('#rText').addEventListener('click', e => {
   const w = e.target.closest('.w'); if (!w || S.mode !== 'cv') return;
   e.stopPropagation();
@@ -2295,32 +2616,47 @@ $$('#mName [data-use]').forEach(b => b.addEventListener('click', () => { const v
 $('#nSaveBook').addEventListener('click', () => saveName($('#nZh').value, $('#nOut').value, 'book'));
 $('#nSaveKho').addEventListener('click', () => saveName($('#nZh').value, $('#nOut').value, 'kho'));
 $('#nDel').addEventListener('click', async () => {
-  const zh = $('#nZh').value.trim(); const where = [], ps = [];
-  if (D.book.has(zh) && S.book){ ps.push(changeNames('book', { del:[zh] })); where.push('truyện này'); }
-  if (D.kho.has(zh)){ ps.push(changeNames('kho', { del:[zh] })); where.push('kho chung'); }
+  const zh = $('#nZh').value.trim(); const where = [], ps = [], undo = [];
+  const bid = S.book ? S.book.id : null;
+  if (D.book.has(zh) && S.book){ undo.push(['book', D.book.get(zh)]); ps.push(changeNames('book', { del:[zh] })); where.push('truyện này'); }
+  if (D.kho.has(zh)){ undo.push(['kho', D.kho.get(zh)]); ps.push(changeNames('kho', { del:[zh] })); where.push('kho chung'); }
   closeModal('mName');
-  toast(where.length ? 'Đã xóa name ' + zh + ' (' + where.join(', ') + ')' : 'Không có name để xóa');
+  if (where.length) toast('Đã xóa name ' + zh + ' (' + where.join(', ') + ')', 5000, { label:'Hoàn tác', fn:() => undo.forEach(([sc, v]) => putNameBack(sc, bid, zh, v)) });
+  else toast('Không có name để xóa');
   await Promise.all(ps);
 });
+// Hoàn tác xóa name. Đã sang truyện khác thì ghi thẳng vào truyện cũ, không đụng name của truyện đang mở.
+async function putNameBack(scope, bid, k, v){
+  if (scope === 'book' && (!S.book || S.book.id !== bid)){ if (bid) await writeBookNames(bid, { set:{ [k]:v } }).catch(() => toast('Không lưu được name. Hãy thử lại.')); }
+  else await changeNames(scope, { set:{ [k]:v } });
+  if (!$('#mMgr').hidden) drawMgr();
+  toast('Đã khôi phục name ' + k + ' = ' + v);
+}
 
 /* ---------- name manager ---------- */
 let mgrTab = 'book';
 function openMgr(tab){
   mgrTab = S.book ? tab : 'kho';
-  $('#gBook').disabled = !S.book;
+  $('#gBook').disabled = $('#gSug').disabled = !S.book;
   $('#gFind').value = '';
+  if (mgrTab === 'sug') SUG.scope = 'chap';
   drawMgr(); openModal('mMgr');
 }
 function mgrMap(){ return mgrTab === 'book' ? D.book : D.kho; }
 function drawMgr(){
+  const sug = mgrTab === 'sug';
   $('#gBook').setAttribute('aria-pressed', String(mgrTab === 'book'));
   $('#gKho').setAttribute('aria-pressed', String(mgrTab === 'kho'));
+  $('#gSug').setAttribute('aria-pressed', String(sug));
   $('#gBook').textContent = 'Truyện này (' + D.book.size + ')';
   $('#gKho').textContent = 'Kho chung (' + D.kho.size + ')';
+  $('#gNames').hidden = $('#gFoot').hidden = sug;
+  $('#gSugBox').hidden = $('#sFoot').hidden = !sug;
+  if (sug){ runSug(); return; }
   const q = $('#gFind').value.trim().toLowerCase();
   const all = [...mgrMap().entries()].filter(([k, v]) => !q || k.includes(q) || v.toLowerCase().includes(q));
   const shown = all.slice(0, 400);
-  $('#gList').innerHTML = shown.length ? shown.map(([k, v]) => '<div class="nrow" data-k="' + esc(k) + '"><span class="zh">' + esc(k) + '</span><input value="' + esc(v) + '" aria-label="Name của ' + esc(k) + '"><button title="Xóa" aria-label="Xóa">✕</button></div>').join('') : '<div class="small muted" style="padding:8px">' + (q ? 'Không tìm thấy name nào.' : 'Chưa có name. Bấm vào một từ khi đọc bản convert để thêm.') + '</div>';
+  $('#gList').innerHTML = shown.length ? shown.map(([k, v]) => '<div class="nrow" data-k="' + esc(k) + '"><span class="zh">' + esc(k) + '</span><input value="' + esc(v) + '" aria-label="Name của ' + esc(k) + '"><button title="Xóa name này" aria-label="Xóa name ' + esc(k) + '">✕</button></div>').join('') : '<div class="small muted" style="padding:8px">' + (q ? 'Không tìm thấy name nào.' : 'Chưa có name. Bấm vào một từ khi đọc bản convert để thêm.') + '</div>';
   $('#gInfo').textContent = all.length > shown.length ? 'Đang hiện 400 / ' + all.length + ' name. Gõ vào ô tìm để lọc.' : '';
   $('#gClear').textContent = 'Xóa tất cả';
   $('#gClear').dataset.arm = '';
@@ -2328,19 +2664,187 @@ function drawMgr(){
 const mgrScope = () => mgrTab === 'book' ? 'book' : 'kho';
 $('#gBook').addEventListener('click', () => { mgrTab = 'book'; drawMgr(); });
 $('#gKho').addEventListener('click', () => { mgrTab = 'kho'; drawMgr(); });
+$('#gSug').addEventListener('click', () => { if (!S.book) return; mgrTab = 'sug'; drawMgr(); });
 $('#gFind').addEventListener('input', drawMgr);
+onClose.mMgr = () => { SUG.run++; };   // đóng khung: dừng việc tìm gợi ý đang chạy
 $('#gList').addEventListener('change', async e => {
   const row = e.target.closest('.nrow'); if (!row || e.target.tagName !== 'INPUT') return;
   const v = e.target.value.trim(); if (!v) return;
   const p = changeNames(mgrScope(), { set:{ [row.dataset.k]:v } }); toast('Đã lưu ' + row.dataset.k + ' = ' + v);
   await p;
 });
+// Xóa một name: xóa ngay, kèm nút Hoàn tác trong dải thông báo (5 giây)
 $('#gList').addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b) return;
-  const row = b.closest('.nrow');
-  const p = changeNames(mgrScope(), { del:[row.dataset.k] }); drawMgr();
+  const row = b.closest('.nrow'), k = row.dataset.k, scope = mgrScope(), map = mgrMap();
+  if (!map.has(k)) return;
+  const v = map.get(k), bid = S.book ? S.book.id : null, at = $$('#gList .nrow').indexOf(row);
+  const p = changeNames(scope, { del:[k] }); drawMgr();
+  const bs = $$('#gList .nrow button');
+  (bs[at] || bs[at - 1] || $('#gFind')).focus();
+  toast('Đã xóa ' + k + ' = ' + v, 5000, { label:'Hoàn tác', fn:() => putNameBack(scope, bid, k, v) });
   await p;
 });
+
+/* ---------- gợi ý name: cụm chữ Hán lặp lại nhiều lần ----------
+   Đếm mọi chuỗi con 2–6 chữ trong các đoạn chữ Hán liền nhau (một Map, một lượt), giữ cụm đủ ngưỡng tần suất,
+   chỉ giữ cụm "tối đại" (bỏ cụm con khi có cụm dài hơn một chữ chứa nó với tần suất ≥ 90%), bỏ cụm đầu/cuối là hư từ,
+   bỏ cụm đã là name. Xếp theo tần suất × độ dài. Cụm bị "Bỏ qua" nhớ theo truyện (kv "sugskip:<id>"). */
+const SUG_FN = new Set([...'的了着著是在不一这那我你他她它们和也就都说地得把被让给对从向到又还很吗呢吧啊呀么个有没要会能而与并已才再只却但便将于以过为這們說對從還嗎會個沒與將於過讓給為']);
+const SUG = { run:0, scope:'chap', key:'', items:[], meta:null, skip:new Set(), skipId:null };
+const hanCode = c => (c >= 0x4E00 && c <= 0x9FFF) || (c >= 0x3400 && c <= 0x4DBF) || (c >= 0xF900 && c <= 0xFAFF);
+function countHan(text, map){
+  const L = text.length;
+  let i = 0;
+  while (i < L){
+    while (i < L && !hanCode(text.charCodeAt(i))) i++;
+    const s = i;
+    while (i < L && hanCode(text.charCodeAt(i))) i++;
+    for (let a = s; a < i - 1; a++){
+      const lim = Math.min(i, a + 6);
+      for (let b = a + 2; b <= lim; b++){ const k = text.slice(a, b); map.set(k, (map.get(k) || 0) + 1); }
+    }
+  }
+}
+const sugEdgeOk = k => !SUG_FN.has(k[0]) && !SUG_FN.has(k[k.length - 1]) && !/^(.)\1+$/.test(k);
+function pickPhrases(map, minF){
+  // ext: tần suất lớn nhất của cụm dài hơn một chữ chứa cụm này (chỉ tính cụm hợp lệ, để "云岚宗的" không che "云岚宗")
+  // nb6: cụm 6 chữ có cụm 6 chữ khác gối lên 5 chữ với tần suất gần bằng: đó là một câu dài lặp lại, không phải name
+  const ext = new Map(), pre6 = new Map(), suf6 = new Map(), low = minF * .9;
+  const up = (m, k, c) => { if ((m.get(k) || 0) < c) m.set(k, c); };
+  for (const [k, c] of map){
+    if (c < low || k.length < 3) continue;
+    if (k.length === 6){ up(pre6, k.slice(0, 5), c); up(suf6, k.slice(1), c); }
+    if (!sugEdgeOk(k)) continue;
+    up(ext, k.slice(0, -1), c); up(ext, k.slice(1), c);
+  }
+  const out = [];
+  for (const [k, c] of map){
+    if (c < minF || (ext.get(k) || 0) >= c * .9 || !sugEdgeOk(k)) continue;
+    if (k.length === 6 && Math.max(pre6.get(k.slice(1)) || 0, suf6.get(k.slice(0, 5)) || 0) >= c * .9) continue;
+    out.push({ z:k, n:c });
+  }
+  out.sort((a, b) => b.n * b.z.length - a.n * a.z.length || b.n - a.n);
+  return out.slice(0, 400);
+}
+function sugMin(scope, n){
+  if (scope === 'chap') return 3;
+  if (scope === 'near') return Math.max(3, Math.min(8, 2 + Math.ceil(n / 4)));
+  return Math.max(3, Math.min(40, 3 + Math.ceil(n / 10)));
+}
+const SUG_MAXCH = 400;   // "Cả truyện": tối đa 400 chương, truyện dài hơn thì lấy rải đều
+function sugRange(scope){
+  const b = S.book, n = b.count;
+  const cur = Math.max(0, Math.min(n - 1, S.view === 'read' && !S.pre ? S.idx : isNat(b.lastRead) ? b.lastRead : 0));
+  const span = (s, e) => { const a = []; for (let i = s; i <= e; i++) a.push(i); return a; };
+  if (scope === 'chap') return { list:[cur], label:'chương ' + (cur + 1) };
+  if (scope === 'near'){
+    const e = Math.min(n - 1, Math.max(cur, 19)), s = Math.max(0, e - 19);
+    return { list:span(s, e), label:s === e ? 'chương ' + (s + 1) : 'chương ' + (s + 1) + '–' + (e + 1) };
+  }
+  if (n <= SUG_MAXCH) return { list:span(0, n - 1), label:'cả truyện (' + fmtN(n) + ' chương)' };
+  const list = []; for (let k = 0; k < SUG_MAXCH; k++) list.push(Math.floor(k * n / SUG_MAXCH));
+  return { list, label:SUG_MAXCH + ' chương rải đều trong ' + fmtN(n) + ' chương' };
+}
+async function sugText(b, i){
+  if (S.view === 'read' && S.book === b && S.idx === i && S.chap) return (S.chap.zhTitle || '') + '\n' + S.chap.zh;
+  let c = null; try{ c = await DB.get('chapters', ck(b.id, i)); }catch(e){}
+  return c && isStr(c.zh) ? (isStr(c.zhTitle) ? c.zhTitle : '') + '\n' + c.zh : '';
+}
+async function loadSkip(id){
+  if (SUG.skipId === id) return;
+  let v; try{ v = await DB.get('kv', 'sugskip:' + id); }catch(e){}
+  SUG.skip = new Set(Array.isArray(v) ? v.filter(isStr) : []); SUG.skipId = id;
+}
+function drawSugScope(){ $$('#sScope [data-sc]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.sc === SUG.scope))); }
+async function runSug(){
+  const b = S.book; if (!b) return;
+  drawSugScope();
+  const my = ++SUG.run, scope = SUG.scope, R = sugRange(scope);
+  const key = b.id + '|' + scope + '|' + R.list[0] + '|' + R.list.length + '|' + b.count;
+  const note = $('#sNote'), pw = $('#sProgW'), bar = $('#sProg');
+  if (SUG.key === key){ pw.hidden = true; drawSug(); return; }
+  SUG.key = ''; SUG.meta = null; SUG.items = [];
+  $('#sList').innerHTML = ''; $('#sUnskip').hidden = true;
+  if (!b.count){ pw.hidden = true; note.textContent = 'Truyện này chưa có chương nào.'; return; }
+  note.textContent = 'Đang tìm cụm lặp lại trong ' + R.label + '…';
+  pw.hidden = R.list.length < 2; bar.style.width = '0%';
+  await Promise.all([dictReady(), loadSkip(b.id)]);
+  if (my !== SUG.run) return;
+  const map = new Map(), total = R.list.length;
+  let done = 0, last = performance.now();
+  for (let i = 0; i < total; i += 8){
+    const texts = await Promise.all(R.list.slice(i, i + 8).map(k => sugText(b, k)));
+    if (my !== SUG.run || S.book !== b) return;
+    for (const t of texts){
+      countHan(t, map); done++;
+      // Giới hạn bộ nhớ khi xét nhiều chương: bỏ các cụm mới gặp một lần
+      if (map.size > 1500000) for (const [k, c] of map) if (c < 2) map.delete(k);
+      if (performance.now() - last > 30){
+        bar.style.width = pct(done / total); note.textContent = 'Đang xét ' + fmtN(done) + ' / ' + fmtN(total) + ' chương…';
+        await tick(); last = performance.now();
+        if (my !== SUG.run || S.book !== b) return;
+      }
+    }
+  }
+  const minF = sugMin(scope, total);
+  SUG.items = pickPhrases(map, minF); SUG.key = key; SUG.meta = { label:R.label, minF };
+  pw.hidden = true;
+  drawSug();
+}
+const sugLeft = () => { const noVp = $('#sNoVp').checked; return SUG.items.filter(x => !D.book.has(x.z) && !D.kho.has(x.z) && !SUG.skip.has(x.z) && !(noVp && D.vp.has(x.z))); };
+$('#sNoVp').checked = LS.get('tc-sug-novp', false) === true;
+$('#sNoVp').addEventListener('change', e => { LS.set('tc-sug-novp', e.target.checked); drawSug(); });
+function drawSug(){
+  if (mgrTab !== 'sug' || $('#mMgr').hidden || !SUG.meta) return;
+  const list = sugLeft(), shown = list.slice(0, 100), m = SUG.meta;
+  $('#sNote').textContent = list.length
+    ? 'Cụm chữ Hán lặp lại từ ' + m.minF + ' lần trở lên trong ' + m.label + (list.length > shown.length ? '. Đang hiện 100 cụm đứng đầu.' : ': ' + list.length + ' cụm.')
+    : 'Không thấy cụm nào lặp lại từ ' + m.minF + ' lần trong ' + m.label + (SUG.items.length ? ' mà chưa có name' + ($('#sNoVp').checked ? ' và chưa có trong VietPhrase.' : '.') : '.') +
+      (SUG.scope === 'chap' && S.book && S.book.count > 1 ? ' Thử chọn 20 chương gần nhất hoặc Cả truyện.' : '');
+  $('#sList').innerHTML = shown.map(x => {
+    const vp = D.vp.get(x.z);
+    const mean = vp !== undefined ? 'VietPhrase: ' + (vp.split('/').map(s => s.trim()).filter(Boolean).join(' / ') || '(để trống)') : 'Đang dịch là: ' + convertPlain(x.z);
+    return '<div class="srow" data-z="' + esc(x.z) + '"><span class="scnt" title="Số lần lặp lại">' + esc(Number(x.n)) + '</span>' +
+      '<div class="smain"><div><span class="szh" lang="zh">' + esc(x.z) + '</span> <b>' + esc(titleCase(hanViet(x.z))) + '</b></div><div class="small muted sme" title="' + esc(mean) + '">' + esc(mean) + '</div></div>' +
+      '<div class="sacts"><button class="btn" data-sadd>Thêm name</button><button class="btn" data-sskip>Bỏ qua</button></div></div>';
+  }).join('');
+  $('#sUnskip').hidden = !SUG.skip.size;
+  $('#sUnskip').textContent = 'Hiện lại ' + fmtN(SUG.skip.size) + ' cụm đã bỏ qua';
+}
+// Bỏ qua (on = true) hoặc thôi bỏ qua một cụm; ghi vào bản mới nhất trong IndexedDB
+function skipSug(z, on){
+  const b = S.book; if (!b) return;
+  if (on) SUG.skip.add(z); else SUG.skip.delete(z);
+  DB.update('kv', 'sugskip:' + b.id, cur => {
+    const a = Array.isArray(cur) ? cur.filter(x => isStr(x) && x !== z) : [];
+    if (on) a.push(z);
+    return a.slice(-5000);
+  }).catch(() => {});
+  drawSug();
+}
+$('#sScope').addEventListener('click', e => { const b = e.target.closest('[data-sc]'); if (!b || b.dataset.sc === SUG.scope) return; SUG.scope = b.dataset.sc; runSug(); });
+$('#sList').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const row = b.closest('.srow'), z = row.dataset.z;
+  if (b.hasAttribute('data-sadd')) openNameEditor(z);
+  else if (b.hasAttribute('data-sskip')){
+    const bs = $$('#sList [data-sskip]'), at = bs.indexOf(b);
+    skipSug(z, true);
+    const nb = $$('#sList [data-sskip]'); (nb[at] || nb[at - 1] || $('#gSug')).focus();
+    toast('Đã bỏ qua ' + z, 5000, { label:'Hoàn tác', fn:() => skipSug(z, false) });
+  }
+});
+$('#sUnskip').addEventListener('click', async () => {
+  const b = S.book; if (!b) return;
+  SUG.skip = new Set();
+  try{ await DB.del('kv', 'sugskip:' + b.id); }catch(e){}
+  drawSug(); $('#gSug').focus();
+});
+// Lưu name xong (khung Thêm name mở từ thẻ Gợi ý): bỏ cụm vừa thành name khỏi danh sách
+// (saveName đóng khung rồi mới đổi name, nên chờ một nhịp)
+onClose.mName = () => { setTimeout(() => { if (mgrTab === 'sug' && !$('#mMgr').hidden) drawSug(); }, 0); };
+$('#bSug').addEventListener('click', () => openMgr('sug'));
 $('#gClear').addEventListener('click', async () => {
   const b = $('#gClear');
   if (!b.dataset.arm){ b.dataset.arm = '1'; b.textContent = 'Bấm lần nữa để xóa hết'; return; }
@@ -2373,7 +2877,23 @@ function drawDict(){
   ];
   $('#dRows').innerHTML = rows.map(([t, d, k, l]) => '<div class="drow"><div><b>' + t + '</b><div class="small muted">' + esc(d) + '</div></div><label class="btn filebtn">' + l + '<input type="file" accept=".txt,text/plain" data-dict="' + k + '"></label></div>').join('');
 }
-function openDict(){ drawDict(); openModal('mDict'); }
+function openDict(){
+  drawDict(); openModal('mDict');
+  const ta = $('#dJunk'); ta.value = '';
+  setJunk(null);
+  junkList().then(l => { if (document.activeElement !== ta && !ta.value) ta.value = l.join('\n'); });
+}
+$('#dJunkSave').addEventListener('click', async () => {
+  const list = cleanJunkList($('#dJunk').value.split('\n'));
+  try{ await DB.put('kv', 'junk', list); }catch(e){ toast('Không lưu được danh sách chuỗi rác.'); return; }
+  setJunk(list); $('#dJunk').value = list.join('\n');
+  toast(list.length ? 'Đã lưu ' + list.length + ' chuỗi rác' : 'Đã lưu danh sách trống: chỉ còn lọc đường link và chữ chèn trong ngoặc');
+});
+$('#dJunkDef').addEventListener('click', async () => {
+  try{ await DB.del('kv', 'junk'); }catch(e){}
+  setJunk(JUNK_DEF.slice()); $('#dJunk').value = JUNK.list.join('\n');
+  toast('Đã dùng lại danh sách chuỗi rác mặc định');
+});
 let dictBusy = false;
 const dictProg = s => { $('#dProg').textContent = s || ''; };
 // Từ điển đổi: xóa đệm, vẽ lại trang đang xem
@@ -2875,15 +3395,15 @@ $('#swFg').addEventListener('click', e => { const b = e.target.closest('button')
 $('#cBg').addEventListener('input', e => { ST.bg = e.target.value; applySettings(); });
 $('#cFg').addEventListener('input', e => { ST.fg = e.target.value; applySettings(); });
 $('#cShadow').addEventListener('change', e => { ST.shadow = e.target.checked; applySettings(); });
-$('#fsDn').addEventListener('click', () => { ST.fs = Math.max(12, ST.fs - 1); applySettings(); });
-$('#fsUp').addEventListener('click', () => { ST.fs = Math.min(40, ST.fs + 1); applySettings(); });
-$('#lhDn').addEventListener('click', () => { ST.lh = Math.max(1, Math.round((ST.lh - .1) * 10) / 10); applySettings(); });
-$('#lhUp').addEventListener('click', () => { ST.lh = Math.min(3, Math.round((ST.lh + .1) * 10) / 10); applySettings(); });
-$('#cFont').addEventListener('change', e => { ST.font = e.target.value; applySettings(); });
+$('#fsDn').addEventListener('click', () => keepPlace(() => { ST.fs = Math.max(12, ST.fs - 1); applySettings(); }));
+$('#fsUp').addEventListener('click', () => keepPlace(() => { ST.fs = Math.min(40, ST.fs + 1); applySettings(); }));
+$('#lhDn').addEventListener('click', () => keepPlace(() => { ST.lh = Math.max(1, Math.round((ST.lh - .1) * 10) / 10); applySettings(); }));
+$('#lhUp').addEventListener('click', () => keepPlace(() => { ST.lh = Math.min(3, Math.round((ST.lh + .1) * 10) / 10); applySettings(); }));
+$('#cFont').addEventListener('change', e => keepPlace(() => { ST.font = e.target.value; applySettings(); }));
 $('#cTier').addEventListener('change', e => { ST.tier = e.target.value; applySettings(); });
-$$('.aligns [data-al]').forEach(b => b.addEventListener('click', () => { ST.align = b.dataset.al; applySettings(); }));
-$$('.aligns [data-ind]').forEach(b => b.addEventListener('click', () => { ST.indent = Math.max(0, Math.min(4, ST.indent + (+b.dataset.ind))); applySettings(); }));
-$('#cReset').addEventListener('click', () => { ST = Object.assign({}, DEF, { tier:ST.tier }); applySettings(); });
+$$('.aligns [data-al]').forEach(b => b.addEventListener('click', () => keepPlace(() => { ST.align = b.dataset.al; applySettings(); })));
+$$('.aligns [data-ind]').forEach(b => b.addEventListener('click', () => keepPlace(() => { ST.indent = Math.max(0, Math.min(4, ST.indent + (+b.dataset.ind))); applySettings(); })));
+$('#cReset').addEventListener('click', () => keepPlace(() => { ST = Object.assign({}, DEF, { tier:ST.tier }); applySettings(); }));
 $('#pfName').addEventListener('click', () => { $('#panel').hidden = true; openMgr('book'); });
 $('#pfDict').addEventListener('click', () => { $('#panel').hidden = true; openDict(); });
 
@@ -2907,7 +3427,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft') go(-1);
   else if (e.key === 'ArrowRight') go(1);
 });
-window.addEventListener('resize', () => { if (!popup.hidden) placePopup(); });
+window.addEventListener('resize', () => { if (!popup.hidden) placePopup(); keepPlaceOnResize(); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applySettings);
 
 /* ================= đồng bộ giữa các tab ================= */
@@ -2958,11 +3478,11 @@ if (BC) BC.onmessage = e => {
   } else if (m.t === 'lib' && S.view === 'lib') renderLib();
 };
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden){ flushKho(); return; }
+  if (document.hidden){ flushKho(); savePos(); return; }
   // Không có BroadcastChannel: quay lại tab thì đọc lại name mới nhất
   if (!BC && D.loaded){ reloadKho(); if (S.book) reloadBook(S.book.id); }
 });
-window.addEventListener('pagehide', () => { flushKho(); });
+window.addEventListener('pagehide', () => { flushKho(); savePos(); });
 
 /* ================= điều hướng bằng hash =================
    "" = tủ truyện, "#t-<id>" = trang truyện, "#t-<id>-c<N>" = chương N (đếm từ 1). Đổi trang bằng gán location.hash
@@ -3057,7 +3577,7 @@ function afterDicts(){
   else if (S.view === 'toc') drawToc();
   else if (S.view === 'read' && !S.pre && S.book){
     if (S.mode !== 'cv') drawHead();
-    else { const y = S.wantY; S.wantY = null; if (y != null){ renderChapter(); window.scrollTo(0, y); } else rerenderKeep(); }
+    else { const w = S.wantY; S.wantY = null; if (w){ renderChapter(); restorePos(w); } else rerenderKeep(); }
   }
 }
 (async function boot(){
