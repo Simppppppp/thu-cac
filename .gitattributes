@@ -1,3 +1,4 @@
 *.txt text eol=lf
 *.html text eol=lf
 *.sh text eol=lf
+truyen/** text eol=lf

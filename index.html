@@ -119,6 +119,16 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 .toc .cl{font-size:11px; color:var(--link); border:1px solid currentColor; border-radius:4px; padding:0 4px; white-space:nowrap}
 .toc li.cur button{color:var(--link); font-weight:600}
 
+/* ---------- truyện có sẵn (tiếng Việt, đọc thẳng từ server, không qua bộ dịch) ---------- */
+.prehead{font-family:var(--font-title); font-size:15px; font-weight:600; color:var(--muted); margin:0 0 10px; letter-spacing:.02em}
+#preBox{margin-bottom:28px}
+#viewRead.pre .modebar,#viewRead.pre .saved-note{display:none !important}
+#viewToc.pre #tInfo,#viewToc.pre #tAppend,#viewToc.pre #tNames,#viewToc.pre #batchBox{display:none !important}
+#rText p.sys,#rText p.chat{text-indent:0; margin-bottom:.3em; font-size:.9em}
+#rText p.sys{padding-left:.75em; border-left:3px solid color-mix(in srgb, var(--link) 55%, transparent); color:color-mix(in srgb, var(--rf) 80%, var(--rb))}
+#rText p.chat{font-size:.86em; color:color-mix(in srgb, var(--rf) 68%, var(--rb))}
+#rText p.sys + p:not(.sys),#rText p.chat + p:not(.chat){margin-top:1em}
+
 /* ---------- name popup (fixed palette, both themes) ---------- */
 #popup{position:absolute; z-index:40; width:350px; background:var(--teal); color:var(--on-teal); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.28); font-family:var(--font-ui); font-size:15px; color-scheme:light}
 #popup .ptop{display:flex; align-items:stretch; justify-content:space-between}
@@ -240,6 +250,11 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
   </header>
   <div class="libbody gutter">
     <div class="wrap">
+      <div id="preBox" hidden>
+        <h2 class="prehead">Truyện có sẵn</h2>
+        <div class="books" id="preBooks"></div>
+      </div>
+      <h2 class="prehead" id="ownHead" hidden>Truyện của bạn</h2>
       <div class="books" id="books"></div>
       <div class="empty" id="libEmpty" hidden>
         <h2>Tủ truyện đang trống</h2>
@@ -677,7 +692,7 @@ const authorName = b => b.author ? (hasHan(b.author) ? titleCase(hanViet(b.autho
 const splitParas = zh => (zh || '').split(/\n+/).map(s => s.replace(/^[\s　]+|[\s　]+$/g, '')).filter(Boolean);
 
 /* ================= app state ================= */
-const S = { view:'lib', book:null, idx:0, chap:null, paras:[], trans:null, transSet:new Set(), mode:'cv', streaming:null };
+const S = { view:'lib', book:null, pre:null, preState:'', preDoc:null, idx:0, chap:null, paras:[], trans:null, transSet:new Set(), mode:'cv', streaming:null };
 const DEF = { bg:null, fg:null, shadow:false, fs:19, lh:1.7, font:'Literata', align:'left', indent:0, tier:'default' };
 let ST = Object.assign({}, DEF, LS.get('tc-settings', {}));
 const FONTS = {
@@ -766,16 +781,21 @@ function show(view){
   $('#viewRead').hidden = view !== 'read';
   $('#gear').hidden = view !== 'read';
   $('#panel').hidden = true;
+  $('#viewToc').classList.toggle('pre', !!S.pre);
+  $('#viewRead').classList.toggle('pre', !!S.pre);
+  $('#pfName').hidden = !!S.pre;
   closePopup();
-  LS.set('tc-last', { view, book:S.book ? S.book.id : null });
+  LS.set('tc-last', { view, book:S.book ? S.book.id : null, pre:S.pre ? S.pre.id : null });
 }
 
 /* ================= library ================= */
 async function renderLib(){
+  S.pre = null; S.preState = ''; S.preDoc = null;
   show('lib');
   S.book = null; LS.set('tc-last', { view:'lib', book:null });
   const books = (await DB.all('books')).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
   $('#libEmpty').hidden = books.length > 0;
+  drawPreLib(books.length);
   $('#books').innerHTML = books.map(b => {
     const read = b.lastRead != null ? 'Đang đọc chương ' + (b.lastRead + 1) : 'Chưa đọc';
     const au = authorName(b);
@@ -891,7 +911,7 @@ async function loadBook(id){
   const b = await DB.get('books', id);
   if (!b) return null;
   b.names = b.names || {};
-  S.book = b;
+  S.book = b; S.pre = null; S.preState = ''; S.preDoc = null;
   D.book = new Map(Object.entries(b.names));
   recalcNameMax();
   const keys = await DB.keys('trans', id + ':');
@@ -922,8 +942,11 @@ async function openToc(id){
   const cur = list.querySelector('li.cur'); if (cur) cur.scrollIntoView({ block:'center' });
   else window.scrollTo(0, 0);
 }
-$('#tocList').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (b) openBook(S.book.id, +b.dataset.i); });
-$('#tRead').addEventListener('click', () => openBook(S.book.id));
+$('#tocList').addEventListener('click', e => {
+  const b = e.target.closest('button[data-i]'); if (!b) return;
+  if (S.pre) openPre(S.pre.id, +b.dataset.i); else openBook(S.book.id, +b.dataset.i);
+});
+$('#tRead').addEventListener('click', () => { if (S.pre) openPre(S.pre.id); else openBook(S.book.id); });
 $('#tAppend').addEventListener('click', () => openAdd('append'));
 $('#tNames').addEventListener('click', () => openMgr('book'));
 $('#tInfo').addEventListener('click', () => {
@@ -968,6 +991,7 @@ async function loadChapter(idx, restoreScroll){
   window.scrollTo(0, restoreScroll && sc && sc.idx === idx ? sc.y : 0);
 }
 function renderChapter(){
+  if (S.pre){ renderPre(); return; }
   const b = S.book; if (!b || S.view !== 'read') return;
   closePopup();
   $('#rTitle').textContent = bookTitle(b);
@@ -1000,12 +1024,14 @@ function renderChapter(){
 function rerenderKeep(){ const y = window.scrollY; renderChapter(); window.scrollTo(0, y); }
 function go(delta){
   const n = S.idx + delta;
+  if (S.pre){ if (n >= 0 && n < S.pre.chuong.length) loadPreChapter(n, false); return; }
   if (!S.book || n < 0 || n >= S.book.count) return;
   loadChapter(n, false);
 }
 document.addEventListener('click', e => {
   const nav = e.target.closest('[data-nav]');
-  if (nav){ const k = nav.dataset.nav; if (k === 'prev') go(-1); else if (k === 'next') go(1); else openToc(S.book.id); return; }
+  if (nav){ const k = nav.dataset.nav; if (k === 'prev') go(-1); else if (k === 'next') go(1); else if (S.pre) openPreToc(S.pre.id); else openToc(S.book.id); return; }
+  if (e.target.closest('[data-pre-retry]')){ if (S.pre) loadPreChapter(S.idx, false); return; }
   const g = e.target.closest('[data-go="lib"]'); if (g){ renderLib(); return; }
   if (e.target.closest('[data-claude]')) translateCurrent();
 });
@@ -1013,10 +1039,126 @@ $('#mCv').addEventListener('click', () => { S.mode = 'cv'; LS.set('tc-mode', 'cv
 $('#mCl').addEventListener('click', () => { S.mode = 'cl'; LS.set('tc-mode', 'cl'); renderChapter(); });
 let scT = 0;
 window.addEventListener('scroll', () => {
-  if (S.view !== 'read' || !S.book) return;
+  if (S.view !== 'read' || !(S.book || S.pre)) return;
   clearTimeout(scT);
-  scT = setTimeout(() => { const all = LS.get('tc-scroll', {}); all[S.book.id] = { idx:S.idx, y:Math.round(window.scrollY) }; LS.set('tc-scroll', all); }, 400);
+  if (S.pre){
+    scT = setTimeout(() => { if (S.pre && S.preState === 'ok') setPrePos(S.pre.id, { idx:S.idx, y:Math.round(window.scrollY) }); }, 400);
+    return;
+  }
+  scT = setTimeout(() => { if (!S.book) return; const all = LS.get('tc-scroll', {}); all[S.book.id] = { idx:S.idx, y:Math.round(window.scrollY) }; LS.set('tc-scroll', all); }, 400);
 }, { passive:true });
+
+/* ================= truyện có sẵn (chỉ bản web) =================
+   Truyện tiếng Việt nằm sẵn trong repo (truyen/danh-sach.json + các file .md). Lần nào mở cũng lấy bản mới từ server,
+   không lưu vào IndexedDB, không qua bộ dịch. Trên claude.ai (hoặc mở file trực tiếp) fetch lỗi thì khu này tự ẩn. */
+let PRE = [];
+const PRE_KEY = 'tc-pre-pos';   // { [idTruyen]: { idx, y } }
+let preReq = 0;
+const preUrl = u => u + (u.includes('?') ? '&' : '?') + 'v=' + Date.now();
+async function preFetch(u){
+  const r = await fetch(preUrl(u), { cache:'no-store' });
+  if (!r.ok) throw new Error('http ' + r.status);
+  return r.text();
+}
+const preOkPath = f => typeof f === 'string' && /^[\w\-.\/]+$/.test(f) && !f.includes('..') && !f.startsWith('/');
+async function loadPreList(){
+  if (!WEB || typeof fetch !== 'function') return [];
+  try{
+    const data = JSON.parse((await preFetch('truyen/danh-sach.json')).replace(/^﻿/, ''));
+    if (!data || !Array.isArray(data.truyen)) return [];
+    return data.truyen.map(t => ({
+      id:String(t && t.id || ''), ten:String(t && t.ten || ''),
+      chuong:(Array.isArray(t && t.chuong) ? t.chuong : []).filter(c => c && preOkPath(c.file)).map(c => ({ file:c.file, ten:String(c.ten || '') }))
+    })).filter(t => /^[\w\-]+$/.test(t.id) && t.chuong.length);
+  }catch(e){ return []; }
+}
+const findPre = id => PRE.find(t => t.id === id) || null;
+const prePos = id => (LS.get(PRE_KEY, {}) || {})[id] || null;
+function setPrePos(id, patch){ const all = LS.get(PRE_KEY, {}) || {}; all[id] = Object.assign({}, all[id], patch); LS.set(PRE_KEY, all); }
+const preClamp = (t, i) => Math.max(0, Math.min(+i || 0, t.chuong.length - 1));
+function drawPreLib(nBooks){
+  $('#preBox').hidden = !PRE.length;
+  $('#ownHead').hidden = !PRE.length;
+  $('#preBooks').innerHTML = PRE.map(t => {
+    const pos = prePos(t.id);
+    const read = pos && pos.idx != null ? 'Đang đọc chương ' + (preClamp(t, pos.idx) + 1) : 'Chưa đọc';
+    return '<div class="book" data-pre="' + esc(t.id) + '"><div style="min-width:0"><h2>' + esc(t.ten) + '</h2>' +
+      '<div class="meta">Truyện tiếng Việt · ' + t.chuong.length + ' chương · ' + read + '</div></div>' +
+      '<div class="acts"><button class="btn primary" data-act="read">' + (pos && pos.idx != null ? 'Đọc tiếp' : 'Đọc từ đầu') + '</button><button class="btn" data-act="toc">Mục lục</button></div></div>';
+  }).join('');
+}
+$('#preBooks').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-act]'); if (!btn) return;
+  const id = btn.closest('.book').dataset.pre;
+  if (btn.dataset.act === 'read') openPre(id); else openPreToc(id);
+});
+function openPreToc(id){
+  const t = findPre(id); if (!t){ renderLib(); return; }
+  S.book = null; S.pre = t; S.preState = ''; S.preDoc = null; preReq++;
+  show('toc');
+  $('#tTitle').textContent = t.ten;
+  $('#tMeta').textContent = 'Truyện tiếng Việt · ' + t.chuong.length + ' chương';
+  const pos = prePos(id), cur = pos && pos.idx != null ? preClamp(t, pos.idx) : -1;
+  $('#tocList').innerHTML = t.chuong.map((c, i) => '<li' + (i === cur ? ' class="cur"' : '') + '><button data-i="' + i + '"><span class="n">' + (i + 1) + '</span><span class="t">' + esc(c.ten || ('Chương ' + (i + 1))) + '</span></button></li>').join('');
+  const el = $('#tocList li.cur'); if (el) el.scrollIntoView({ block:'center' }); else window.scrollTo(0, 0);
+}
+async function openPre(id, idx){
+  const t = findPre(id); if (!t){ renderLib(); return; }
+  S.book = null; S.pre = t;
+  show('read');
+  const pos = prePos(id);
+  await loadPreChapter(preClamp(t, idx ?? (pos && pos.idx) ?? 0), idx == null);
+}
+async function loadPreChapter(idx, restoreScroll){
+  const t = S.pre; if (!t) return;
+  const my = ++preReq;
+  const old = prePos(t.id);
+  S.idx = idx; S.preState = 'loading'; S.preDoc = null;
+  clearTimeout(scT);
+  renderPre();
+  if (!restoreScroll) window.scrollTo(0, 0);
+  let md;
+  try{ md = await preFetch('truyen/' + t.chuong[idx].file); }
+  catch(e){
+    if (my !== preReq) return;
+    S.preState = 'err'; renderPre(); return;
+  }
+  if (my !== preReq || S.pre !== t) return;
+  S.preDoc = parsePre(md); S.preState = 'ok';
+  renderPre();
+  const sameChap = old && old.idx === idx;
+  setPrePos(t.id, { idx, y:sameChap ? (old.y || 0) : 0 });
+  LS.set('tc-last', { view:'read', book:null, pre:t.id });
+  window.scrollTo(0, restoreScroll && sameChap ? (old.y || 0) : 0);
+}
+function parsePre(md){
+  const lines = String(md).replace(/^﻿/, '').replace(/\r/g, '').split('\n');
+  let i = 0, title = '';
+  while (i < lines.length && !lines[i].trim()) i++;
+  if (i < lines.length && /^#\s+/.test(lines[i])) title = lines[i++].replace(/^#+\s*/, '').trim();
+  return { title, paras:lines.slice(i).map(s => s.trim()).filter(Boolean) };
+}
+function renderPre(){
+  const t = S.pre; if (!t || S.view !== 'read') return;
+  closePopup();
+  const ch = t.chuong[S.idx] || {}, n = t.chuong.length;
+  $('#rTitle').textContent = t.ten;
+  $('#rSub').textContent = (S.preState === 'ok' && S.preDoc && S.preDoc.title) || ch.ten || '';
+  $('#rPos').textContent = (S.idx + 1) + ' / ' + n;
+  $$('[data-nav="prev"]').forEach(x => x.disabled = S.idx <= 0);
+  $$('[data-nav="next"]').forEach(x => x.disabled = S.idx >= n - 1);
+  const box = $('#rText');
+  if (S.preState === 'ok' && S.preDoc){
+    box.innerHTML = S.preDoc.paras.length ? S.preDoc.paras.map(p => {
+      const c = p.startsWith('【') ? ' class="sys"' : /^[［\[]/.test(p) ? ' class="chat"' : '';
+      return '<p' + c + '>' + esc(p) + '</p>';
+    }).join('') : '<p class="muted">Chương này trống.</p>';
+  } else if (S.preState === 'err'){
+    box.innerHTML = '<div class="placeholder"><b>Không tải được chương này.</b><span>Kiểm tra mạng rồi bấm Thử lại.</span><button class="btn primary" data-pre-retry>Thử lại</button></div>';
+  } else {
+    box.innerHTML = '<p class="muted">Đang tải chương…</p>';
+  }
+}
 
 /* ================= name popup ================= */
 const P = { p:-1, s:0, e:0 };
@@ -1463,14 +1605,18 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applySetti
 
 /* ================= boot ================= */
 (async function boot(){
+  const last = LS.get('tc-last', {});   // đọc trước khi show() ghi đè
   applySettings();
   await DB.open();
   $('#memBanner').hidden = !DB.isMem;
   show('lib');
   $('#libEmpty').hidden = true;
+  const prePromise = loadPreList();
   await loadDicts();
-  const last = LS.get('tc-last', {});
-  if (last.book && (last.view === 'read' || last.view === 'toc')){
+  PRE = await prePromise;
+  if (last.pre && findPre(last.pre) && (last.view === 'read' || last.view === 'toc')){
+    if (last.view === 'read') await openPre(last.pre); else openPreToc(last.pre);
+  } else if (last.book && (last.view === 'read' || last.view === 'toc')){
     const b = await loadBook(last.book);
     if (b){ if (last.view === 'read') await openBook(b.id); else await openToc(b.id); }
     else await renderLib();
