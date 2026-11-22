@@ -1,0 +1,1493 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Thư Các: đọc truyện Trung convert, sửa name, chỉnh màu chữ, ngay trên trình duyệt.">
+<meta name="theme-color" content="#ebe5d5">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23b8323c'/%3E%3Ctext x='32' y='46' font-size='38' text-anchor='middle' fill='white' font-family='serif'%3E%E6%9B%B8%3C/text%3E%3C/svg%3E">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}</style>
+<title>Thư Các</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600&family=Merriweather:wght@400;700&family=Noto+Serif:wght@400;600;700&display=swap">
+<style>
+/* Layout: one reading column (max 880px) on a paper-toned ground; header and chapter bar are full-width bands; tools float bottom-right. */
+:root{
+  --rb:#ebe5d5; --rf:#1f1d18; --link:#2b7a1a; --danger:#b8323c;
+  --teal:#1a9ab0; --teal-dk:#127a8c; --lab:#137a22; --on-teal:#ffffff; --field:#ffffff; --field-ink:#1b1b1b; --red:#d9414f;
+  --muted:color-mix(in srgb, var(--rf) 52%, var(--rb));
+  --line:color-mix(in srgb, var(--rf) 14%, transparent);
+  --band:color-mix(in srgb, var(--rb) 93%, var(--rf));
+  --card:color-mix(in srgb, var(--rb) 96%, var(--rf));
+  --head:color-mix(in srgb, var(--rb) 70%, #ffffff);
+  --font-ui:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --font-title:"Noto Serif",Georgia,"Times New Roman",serif;
+  --fs:19px; --lh:1.7; --rfont:"Literata",Georgia,serif; --align:left; --indent:0em; --shadow:none;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--rb:#1d1b17; --rf:#d8d1c1; --link:#8fd47a; --danger:#ef6b72; --head:color-mix(in srgb, var(--rb) 92%, #ffffff); color-scheme:dark}}
+:root[data-theme="dark"]{--rb:#1d1b17; --rf:#d8d1c1; --link:#8fd47a; --danger:#ef6b72; --head:color-mix(in srgb, var(--rb) 92%, #ffffff); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+.web .claude-only{display:none !important}
+html{overflow-x:clip}
+body{margin:0}
+body{background:var(--rb); color:var(--rf); font-family:var(--font-ui); font-size:15px; line-height:1.5; min-height:100vh}
+button,input,select,textarea{font:inherit; color:inherit}
+button{cursor:pointer}
+a{color:var(--link)}
+:focus-visible{outline:2px solid var(--link); outline-offset:2px}
+.wrap{max-width:880px; margin:0 auto}
+.gutter{padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.btn{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--card); border-radius:8px; padding:8px 14px; font-weight:500; font-size:14px; line-height:1.2}
+.btn:hover{border-color:color-mix(in srgb, var(--rf) 35%, transparent)}
+.btn.primary{background:var(--link); color:var(--rb); border-color:transparent}
+.btn.danger{color:var(--danger)}
+.btn:disabled{opacity:.5; cursor:not-allowed}
+.btn svg{width:16px; height:16px}
+.linkbtn{background:none; border:0; padding:0; color:var(--link); font-weight:500}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none}
+.banner{background:color-mix(in srgb, var(--danger) 14%, var(--rb)); color:var(--rf); padding-block:10px; font-size:14px}
+
+/* ---------- library ---------- */
+.libhead{background:var(--head); border-bottom:1px solid var(--line); padding-block:28px 22px}
+.brand{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
+.brand h1{font-family:var(--font-title); font-size:34px; margin:0; letter-spacing:.01em}
+.brand .seal{font-family:var(--font-title); font-size:15px; color:var(--rb); background:var(--danger); border-radius:4px; padding:2px 6px; transform:translateY(-4px)}
+.brand p{margin:0; color:var(--muted)}
+.toolbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:18px}
+.dictstat{margin-top:12px; font-size:13px; color:var(--muted)}
+.libbody{padding-block:24px 120px}
+.books{display:grid; gap:12px}
+.book{display:grid; grid-template-columns:1fr auto; gap:6px 16px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px}
+.book h2{font-family:var(--font-title); font-size:20px; margin:0; line-height:1.3}
+.book .meta{color:var(--muted); font-size:13px}
+.book .acts{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end}
+@media (max-width:600px){.book{grid-template-columns:1fr}.book .acts{justify-content:flex-start}}
+.empty{border:1px dashed color-mix(in srgb, var(--rf) 30%, transparent); border-radius:12px; padding:28px 24px; display:grid; gap:14px}
+.empty h2{font-family:var(--font-title); margin:0; font-size:22px}
+.empty ol{margin:0; padding-left:20px; display:grid; gap:6px}
+
+/* ---------- reader ---------- */
+.rhead{background:var(--head); text-align:center; padding-block:14px 16px}
+.rhead .back{display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px}
+.rhead h1{font-family:var(--font-title); font-weight:700; font-size:clamp(20px, 3.4vw, 30px); color:var(--muted); margin:0; line-height:1.3; text-wrap:balance}
+.rhead p{margin:6px 0 0; color:var(--muted); font-size:clamp(15px, 2vw, 19px); text-wrap:balance}
+.cnav{background:var(--band); padding-block:10px}
+.cnav .wrap{display:flex; justify-content:space-between; align-items:center; gap:8px}
+.cnav button{background:none; border:0; color:var(--link); font-weight:600; font-size:17px; display:inline-flex; align-items:center; gap:4px; padding:4px 2px}
+.cnav button:disabled{color:var(--muted); opacity:.5; cursor:default}
+.cnav button svg{width:18px; height:18px; stroke-width:2.6}
+.modebar{display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding-block:14px 4px}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
+.seg button{border:0; background:transparent; padding:7px 12px; font-size:14px; font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--link); color:var(--rb)}
+.seg button:disabled{opacity:.45; cursor:not-allowed}
+.cnote{font-size:13px; color:var(--muted); flex:1 1 220px; min-width:0}
+.cnote.err{color:var(--danger)}
+.saved-note{font-size:12px; color:var(--muted); padding-block:6px 0}
+#rText{font-family:var(--rfont); font-size:var(--fs); line-height:var(--lh); text-align:var(--align); text-shadow:var(--shadow); padding-block:18px 28px; overflow-wrap:anywhere; min-width:0}
+#rText p{margin:0 0 1em; text-indent:var(--indent)}
+#rText .w{cursor:pointer; border-radius:3px}
+#rText .w:hover{background:color-mix(in srgb, var(--link) 16%, transparent)}
+#rText .w.sel{color:var(--red); background:color-mix(in srgb, var(--red) 10%, transparent)}
+#rText .stream::after{content:"▍"; color:var(--link); animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+@media (prefers-reduced-motion: reduce){#rText .stream::after{animation:none}}
+.placeholder{border:1px dashed color-mix(in srgb, var(--rf) 30%, transparent); border-radius:10px; padding:22px; font-family:var(--font-ui); font-size:15px; display:grid; gap:12px; justify-items:start}
+
+/* ---------- table of contents ---------- */
+.tochead{background:var(--head); padding-block:18px 20px; border-bottom:1px solid var(--line)}
+.tochead h1{font-family:var(--font-title); font-size:28px; margin:6px 0 2px; line-height:1.3}
+.tocbody{padding-block:20px 120px; display:grid; gap:20px}
+.box{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; display:grid; gap:12px}
+.box h2{font-size:16px; margin:0}
+.row{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+.row label{display:inline-flex; gap:6px; align-items:center}
+.num{width:84px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--rb); font-variant-numeric:tabular-nums}
+.sel-in{padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--rb)}
+.prog{height:6px; background:var(--line); border-radius:3px; overflow:hidden}
+.prog i{display:block; height:100%; background:var(--link); width:0; transition:width .3s}
+.toc{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:0 20px}
+.toc li{border-bottom:1px solid var(--line)}
+.toc button{width:100%; text-align:left; background:none; border:0; padding:10px 2px; display:flex; gap:10px; align-items:baseline}
+.toc button:hover{color:var(--link)}
+.toc .n{color:var(--muted); font-variant-numeric:tabular-nums; min-width:3ch; font-size:13px}
+.toc .t{flex:1; min-width:0; overflow-wrap:anywhere}
+.toc .cl{font-size:11px; color:var(--link); border:1px solid currentColor; border-radius:4px; padding:0 4px; white-space:nowrap}
+.toc li.cur button{color:var(--link); font-weight:600}
+
+/* ---------- name popup (fixed palette, both themes) ---------- */
+#popup{position:absolute; z-index:40; width:350px; background:var(--teal); color:var(--on-teal); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.28); font-family:var(--font-ui); font-size:15px; color-scheme:light}
+#popup .ptop{display:flex; align-items:stretch; justify-content:space-between}
+#popup .ptop button{background:none; border:0; color:var(--on-teal); font-weight:600; display:inline-flex; align-items:center; gap:2px; padding:9px 8px; font-size:15px}
+#popup .ptop button:disabled{opacity:.4; cursor:default}
+#popup .ptop .shr{background:var(--red); border-radius:6px; margin:4px; padding:4px 8px}
+#popup .prow{display:grid; grid-template-columns:34px 1fr 36px 36px; align-items:center; gap:0; border-top:1px solid rgba(255,255,255,.18)}
+#popup .prow > b{background:var(--lab); align-self:stretch; display:flex; align-items:center; justify-content:center; font-size:13px}
+#popup .prow input{width:100%; border:0; border-left:3px solid #222; background:var(--field); color:var(--field-ink); padding:7px 8px; font-size:15px; min-width:0}
+#popup .prow .ib{background:none; border:0; color:var(--on-teal); display:flex; justify-content:center; align-items:center; padding:6px 0; text-decoration:none}
+#popup .prow .ib:hover{background:rgba(255,255,255,.14)}
+#popup .prow .wide{grid-column:span 2; gap:4px; font-weight:500}
+#popup .pbot{display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,.18)}
+#popup .pbot button{background:none; border:0; color:var(--on-teal); font-weight:600; display:inline-flex; align-items:center; gap:6px; padding:10px 12px; font-size:15px}
+@media (max-width:560px){
+  #popup{position:fixed; left:0 !important; right:0; top:auto !important; bottom:0; width:auto; border-radius:12px 12px 0 0; padding-bottom:env(safe-area-inset-bottom, 0px); padding-left:env(safe-area-inset-left, 0px); padding-right:env(safe-area-inset-right, 0px)}
+}
+
+/* ---------- settings panel ---------- */
+#gear{position:fixed; z-index:30; right:calc(18px + env(safe-area-inset-right, 0px)); bottom:calc(18px + env(safe-area-inset-bottom, 0px)); width:56px; height:56px; border-radius:50%; border:1px solid var(--line); background:var(--card); color:var(--muted); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,.15)}
+#gear svg{width:28px; height:28px}
+#panel{position:fixed; z-index:31; right:calc(18px + env(safe-area-inset-right, 0px)); bottom:calc(84px + env(safe-area-inset-bottom, 0px)); width:min(330px, calc(100vw - 32px)); max-height:calc(100vh - 120px); overflow:auto; background:#f6f5f2; color:#1b1b1b; border:1px solid rgba(0,0,0,.15); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.25); color-scheme:light}
+#panel .pin{padding:12px 12px 10px; display:grid; gap:8px}
+#panel .lbl{display:flex; justify-content:space-between; align-items:center; font-size:15px}
+#panel input[type=color]{width:74px; height:28px; border:1px solid #333; padding:0; background:none}
+.sw{display:grid; grid-template-columns:repeat(7, 1fr); gap:4px}
+.sw button{aspect-ratio:1.25; border:1px solid rgba(0,0,0,.25); border-radius:2px; font-family:var(--font-title); font-size:15px; padding:0}
+.sw button[aria-pressed="true"]{outline:3px solid #1a9ab0; outline-offset:1px}
+.stepper{display:flex; align-items:center; gap:6px}
+.stepper button{background:none; border:0; font-size:26px; line-height:1; width:30px; font-weight:700}
+.stepper output{border:2px solid #333; padding:3px 8px; min-width:62px; text-align:center; font-weight:600; font-variant-numeric:tabular-nums}
+.steps{display:flex; justify-content:space-between; align-items:center; gap:6px}
+#panel select{width:100%; padding:6px; border:1px solid #888; border-radius:2px; background:#fff}
+.aligns{display:grid; grid-template-columns:repeat(6,1fr); gap:4px}
+.aligns button{border:1px solid #999; background:#f0f0f0; padding:5px 0; display:flex; justify-content:center}
+.aligns button[aria-pressed="true"]{background:#d8eef2; border-color:#1a9ab0}
+.aligns svg{width:22px; height:22px}
+.pfoot{background:#33393f; color:#fff; display:flex; gap:4px; padding:4px; border-radius:0 0 8px 8px; flex-wrap:wrap}
+.pfoot button{background:none; border:0; color:#fff; display:inline-flex; gap:6px; align-items:center; padding:8px 10px; font-weight:600}
+.pfoot select{width:auto !important}
+.tierrow{display:flex; gap:8px; align-items:center; font-size:14px}
+
+/* ---------- modals ---------- */
+.modal{position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.42); display:flex; align-items:center; justify-content:center; padding:16px}
+.sheet{background:var(--rb); color:var(--rf); width:min(560px, 100%); max-height:calc(100vh - 32px); overflow:auto; border-radius:10px; box-shadow:0 16px 40px rgba(0,0,0,.3)}
+.sheet header{display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--rb); z-index:1}
+.sheet header h2{margin:0; font-size:19px}
+.sheet .x{background:none; border:0; font-size:26px; line-height:1; color:var(--muted)}
+.sheet .body{padding:16px 20px; display:grid; gap:12px}
+.sheet .foot{padding:14px 20px 18px; display:flex; flex-wrap:wrap; gap:10px; justify-content:flex-end; border-top:1px solid var(--line)}
+.fld{display:grid; gap:4px}
+.fld > span{font-size:14px; font-weight:500}
+.fld input,.fld textarea,.fld select{width:100%; padding:8px 10px; border:1px solid color-mix(in srgb, var(--rf) 30%, transparent); border-radius:6px; background:var(--card); min-width:0}
+.fld textarea{min-height:140px; resize:vertical; font-family:var(--font-ui)}
+.fld .hint{font-size:12px; color:var(--muted)}
+.mini{display:grid; grid-template-columns:repeat(5, 1fr); gap:4px}
+.mini button{border:1px solid var(--line); background:var(--card); border-radius:4px; padding:6px 2px; font-size:13px; line-height:1.2}
+.inl{display:flex; gap:6px}
+.inl > :first-child{flex:1; min-width:0}
+.nlist{display:grid; gap:4px; max-height:46vh; overflow:auto; border:1px solid var(--line); border-radius:8px; padding:6px}
+.nrow{display:grid; grid-template-columns:minmax(70px, 34%) 1fr auto; gap:6px; align-items:center}
+.nrow .zh{font-size:16px; overflow-wrap:anywhere}
+.nrow input{padding:5px 8px; border:1px solid var(--line); border-radius:5px; background:var(--card); min-width:0; width:100%}
+.nrow button{background:none; border:0; color:var(--danger); padding:4px 6px}
+.tabs{display:flex; gap:6px}
+.tabs button{border:1px solid var(--line); background:var(--card); padding:6px 12px; border-radius:6px}
+.tabs button[aria-pressed="true"]{background:var(--link); color:var(--rb); border-color:transparent}
+.drow{display:grid; grid-template-columns:1fr auto; gap:4px 12px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line)}
+.drow:last-child{border-bottom:0}
+.drow b{font-weight:600}
+.filebtn{position:relative; overflow:hidden}
+.filebtn input{position:absolute; inset:0; opacity:0; cursor:pointer}
+
+#toast{position:fixed; z-index:60; left:50%; transform:translateX(-50%); bottom:calc(90px + env(safe-area-inset-bottom, 0px)); background:#2b2b2b; color:#fff; padding:10px 16px; border-radius:8px; font-size:14px; max-width:calc(100vw - 32px); box-shadow:0 6px 18px rgba(0,0,0,.25)}
+#job{position:fixed; z-index:35; left:50%; transform:translateX(-50%); top:calc(10px + env(safe-area-inset-top, 0px)); background:#123d45; color:#fff; padding:8px 8px 8px 14px; border-radius:999px; display:flex; gap:10px; align-items:center; font-size:14px; max-width:calc(100vw - 32px); box-shadow:0 6px 18px rgba(0,0,0,.25)}
+#job span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
+#job button{background:#e05561; color:#fff; border:0; border-radius:999px; padding:4px 12px; font-weight:600; flex:none}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-l" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-r" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16.2 9.6"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4"/><path d="M8 20v-6h8v6"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="12" rx="1.5"/><path d="M5 16V5a1 1 0 0 1 1-1h9"/></symbol>
+  <symbol id="i-find" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-cog" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M8 7h7"/></symbol>
+  <symbol id="i-al-out" viewBox="0 0 24 24"><path d="M3 5h18M11 10h10M11 14h10M3 19h18M7 9l-4 3 4 3"/></symbol>
+  <symbol id="i-al-l" viewBox="0 0 24 24"><path d="M3 5h18M3 10h12M3 14h18M3 19h12"/></symbol>
+  <symbol id="i-al-c" viewBox="0 0 24 24"><path d="M3 5h18M6 10h12M3 14h18M6 19h12"/></symbol>
+  <symbol id="i-al-j" viewBox="0 0 24 24"><path d="M3 5h18M3 10h18M3 14h18M3 19h18"/></symbol>
+  <symbol id="i-al-r" viewBox="0 0 24 24"><path d="M3 5h18M9 10h12M3 14h18M9 19h12"/></symbol>
+  <symbol id="i-al-in" viewBox="0 0 24 24"><path d="M3 5h18M11 10h10M11 14h10M3 19h18M3 9l4 3-4 3"/></symbol>
+</svg>
+
+<div id="memBanner" class="banner gutter" hidden><div class="wrap">Trình duyệt đang chặn lưu dữ liệu, nên truyện và name sẽ mất khi bạn đóng trang. Hãy mở trang ở cửa sổ thường (không ẩn danh).</div></div>
+
+<!-- ============ LIBRARY ============ -->
+<section id="viewLib" hidden>
+  <header class="libhead gutter">
+    <div class="wrap">
+      <div class="brand"><h1>Thư Các</h1><span class="seal">書閣</span><p>Tủ truyện convert · sửa name<span class="claude-only"> · Claude dịch</span></p></div>
+      <div class="toolbar">
+        <button class="btn primary" id="bAdd"><svg class="i"><use href="#i-plus"/></svg>Thêm truyện</button>
+        <button class="btn" id="bDict">Từ điển</button>
+        <button class="btn" id="bKho">Kho name chung</button>
+        <button class="btn" id="bBackup">Sao lưu</button>
+        <label class="btn filebtn">Khôi phục<input type="file" id="fRestore" accept=".json,application/json"></label>
+      </div>
+      <div class="dictstat" id="dictStat">Đang nạp từ điển…</div>
+    </div>
+  </header>
+  <div class="libbody gutter">
+    <div class="wrap">
+      <div class="books" id="books"></div>
+      <div class="empty" id="libEmpty" hidden>
+        <h2>Tủ truyện đang trống</h2>
+        <ol>
+          <li>Bấm <b>Thêm truyện</b>, dán chữ Trung hoặc chọn file .txt. Trang tự chia chương theo dòng 第…章.</li>
+          <li>Đọc bản convert. Bấm vào một từ để mở bảng Name và sửa cách dịch.</li>
+          <li class="claude-only">Truyện nào thích thì bấm <b>Claude dịch</b> để có bản dịch mượt.</li>
+        </ol>
+        <div class="row">
+          <button class="btn primary" id="bAdd2"><svg class="i"><use href="#i-plus"/></svg>Thêm truyện</button>
+          <button class="btn" id="bSample">Thử với đoạn mẫu (Tam Quốc Diễn Nghĩa, hồi 1)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TOC ============ -->
+<section id="viewToc" hidden>
+  <header class="tochead gutter">
+    <div class="wrap">
+      <button class="linkbtn" data-go="lib">‹ Tủ truyện</button>
+      <h1 id="tTitle"></h1>
+      <div class="muted" id="tMeta"></div>
+      <div class="toolbar">
+        <button class="btn primary" id="tRead"><svg class="i"><use href="#i-book"/></svg>Đọc tiếp</button>
+        <button class="btn" id="tInfo">Sửa thông tin</button>
+        <button class="btn" id="tAppend"><svg class="i"><use href="#i-plus"/></svg>Thêm chương</button>
+        <button class="btn" id="tNames">Name truyện này</button>
+      </div>
+    </div>
+  </header>
+  <div class="tocbody gutter">
+    <div class="wrap" style="display:grid; gap:20px">
+      <div class="box claude-only" id="batchBox">
+        <h2>Claude dịch nhiều chương</h2>
+        <div class="row">
+          <label>Từ chương <input class="num" type="number" id="tFrom" min="1" value="1"></label>
+          <label>đến <input class="num" type="number" id="tTo" min="1" value="1"></label>
+          <label><input type="checkbox" id="tRedo"> Dịch lại cả chương đã dịch</label>
+        </div>
+        <div class="row">
+          <button class="btn primary" id="tStart">Bắt đầu dịch</button>
+          <span class="small muted" id="tState"></span>
+        </div>
+        <div class="prog" id="tProgWrap" hidden><i id="tProg"></i></div>
+      </div>
+      <ol class="toc" id="tocList"></ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============ READER ============ -->
+<section id="viewRead" hidden>
+  <header class="rhead gutter">
+    <div class="wrap">
+      <div class="back"><button class="linkbtn" data-go="lib">‹ Tủ truyện</button><span class="muted" id="rPos"></span></div>
+      <h1 id="rTitle"></h1>
+      <p id="rSub"></p>
+    </div>
+  </header>
+  <nav class="cnav gutter"><div class="wrap">
+    <button data-nav="prev"><svg class="i"><use href="#i-l"/></svg>Chương trước</button>
+    <button data-nav="toc">Mục lục</button>
+    <button data-nav="next">Chương sau<svg class="i"><use href="#i-r"/></svg></button>
+  </div></nav>
+  <div class="gutter">
+    <div class="wrap">
+      <div class="modebar">
+        <div class="seg" role="group" aria-label="Chọn bản">
+          <button id="mCv" aria-pressed="true">Bản convert</button>
+          <button id="mCl" aria-pressed="false">Bản Claude dịch</button>
+        </div>
+        <button class="btn claude-only" id="bClaude">Claude dịch chương này</button>
+        <span class="cnote" id="cNote"></span>
+      </div>
+      <div class="saved-note" id="savedNote" hidden></div>
+      <article id="rText" lang="vi"></article>
+    </div>
+  </div>
+  <nav class="cnav gutter" style="margin-bottom:96px"><div class="wrap">
+    <button data-nav="prev"><svg class="i"><use href="#i-l"/></svg>Chương trước</button>
+    <button data-nav="toc">Mục lục</button>
+    <button data-nav="next">Chương sau<svg class="i"><use href="#i-r"/></svg></button>
+  </div></nav>
+</section>
+
+<!-- ============ NAME POPUP ============ -->
+<div id="popup" hidden role="dialog" aria-label="Sửa name">
+  <div class="ptop">
+    <button class="shr" id="pShrL" title="Bớt 1 chữ bên trái"><svg class="i"><use href="#i-x"/></svg></button>
+    <button id="pExtL" title="Thêm 1 chữ bên trái"><svg class="i"><use href="#i-l"/></svg>Mở rộng</button>
+    <button id="pExtR" title="Thêm 1 chữ bên phải">Mở rộng<svg class="i"><use href="#i-r"/></svg></button>
+    <button class="shr" id="pShrR" title="Bớt 1 chữ bên phải"><svg class="i"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="prow"><b>hv</b><input id="pHv" aria-label="Hán Việt thường"><button class="ib" data-save="pHv:book" title="Lưu name cho truyện này"><svg class="i"><use href="#i-ok"/></svg></button><button class="ib" data-save="pHv:kho" title="Lưu vào kho name chung"><svg class="i"><use href="#i-save"/></svg></button></div>
+  <div class="prow"><b>HV</b><input id="pHV" aria-label="Hán Việt viết hoa"><button class="ib" data-save="pHV:book" title="Lưu name cho truyện này"><svg class="i"><use href="#i-ok"/></svg></button><button class="ib" data-save="pHV:kho" title="Lưu vào kho name chung"><svg class="i"><use href="#i-save"/></svg></button></div>
+  <div class="prow" style="grid-template-columns:34px 1fr 36px 36px 36px"><b>zw</b><input id="pZw" readonly aria-label="Chữ Trung"><a class="ib" id="pGg" target="_blank" rel="noopener" title="Google Dịch"><span style="font-weight:700;font-size:13px">A文</span></a><button class="ib" id="pCopy" title="Sao chép chữ Trung"><svg class="i"><use href="#i-copy"/></svg></button><a class="ib" id="pBd" target="_blank" rel="noopener" title="Tìm trên Baidu"><svg class="i"><use href="#i-find"/></svg></a></div>
+  <div class="prow"><b>Tr</b><input id="pTr" readonly aria-label="Nghĩa hiện tại"><button class="ib wide" id="pEdit" title="Mở bảng chỉnh name"><svg class="i"><use href="#i-edit"/></svg>Sửa</button></div>
+  <div class="prow"><b>tc</b><input id="pTc" placeholder="cụm từ tùy chọn" aria-label="Cụm từ tùy chọn"><button class="ib" data-save="pTc:book" title="Lưu name cho truyện này"><svg class="i"><use href="#i-ok"/></svg></button><button class="ib" data-save="pTc:kho" title="Lưu vào kho name chung"><svg class="i"><use href="#i-save"/></svg></button></div>
+  <div class="pbot">
+    <button id="pMgr"><svg class="i"><use href="#i-cog"/></svg>Quản lý</button>
+    <button id="pClose">Đóng</button>
+    <button id="pAdd"><svg class="i"><use href="#i-plus"/></svg>Thêm name</button>
+  </div>
+</div>
+
+<!-- ============ SETTINGS ============ -->
+<button id="gear" hidden aria-label="Cài đặt đọc" aria-expanded="false"><svg class="i"><use href="#i-cog"/></svg></button>
+<div id="panel" hidden>
+  <div class="pin">
+    <div class="lbl"><span>Màu nền:</span><input type="color" id="cBg" aria-label="Tự chọn màu nền"></div>
+    <div class="sw" id="swBg"></div>
+    <div class="lbl"><span>Màu chữ: &nbsp;<label style="font-size:14px">Bóng: <input type="checkbox" id="cShadow"></label></span><input type="color" id="cFg" aria-label="Tự chọn màu chữ"></div>
+    <div class="sw" id="swFg"></div>
+    <div class="steps">
+      <div class="stepper"><button id="fsDn" aria-label="Giảm cỡ chữ">−</button><output id="fsOut" title="Cỡ chữ">19</output><button id="fsUp" aria-label="Tăng cỡ chữ">+</button></div>
+      <div class="stepper"><button id="lhDn" aria-label="Giảm giãn dòng">−</button><output id="lhOut" title="Giãn dòng">1.7</output><button id="lhUp" aria-label="Tăng giãn dòng">+</button></div>
+    </div>
+    <select id="cFont" aria-label="Font chữ"></select>
+    <div class="aligns">
+      <button data-ind="-1" title="Giảm thụt đầu dòng"><svg class="i"><use href="#i-al-out"/></svg></button>
+      <button data-al="left" title="Căn trái"><svg class="i"><use href="#i-al-l"/></svg></button>
+      <button data-al="center" title="Căn giữa"><svg class="i"><use href="#i-al-c"/></svg></button>
+      <button data-al="justify" title="Căn đều hai bên"><svg class="i"><use href="#i-al-j"/></svg></button>
+      <button data-al="right" title="Căn phải"><svg class="i"><use href="#i-al-r"/></svg></button>
+      <button data-ind="1" title="Tăng thụt đầu dòng"><svg class="i"><use href="#i-al-in"/></svg></button>
+    </div>
+    <div class="tierrow claude-only"><span>Claude dịch:</span><select id="cTier" style="flex:1"><option value="complex">Hay nhất (chậm hơn)</option><option value="default">Cân bằng</option><option value="quick">Nhanh</option></select></div>
+    <button class="linkbtn small" id="cReset" style="justify-self:start">Về mặc định</button>
+  </div>
+  <div class="pfoot">
+    <button id="pfName"><svg class="i"><use href="#i-edit"/></svg>Name</button>
+    <button id="pfDict"><svg class="i"><use href="#i-book"/></svg>Từ điển</button>
+  </div>
+</div>
+
+<!-- ============ MODALS ============ -->
+<div class="modal" id="mAdd" hidden><div class="sheet" role="dialog" aria-labelledby="mAddH">
+  <header><h2 id="mAddH">Thêm truyện</h2><button class="x" data-close aria-label="Đóng">×</button></header>
+  <div class="body">
+    <label class="fld" id="aTitleF"><span>Tên truyện</span><input id="aTitle" placeholder="Để trống thì lấy theo tên file"></label>
+    <label class="fld" id="aAuthorF"><span>Tác giả</span><input id="aAuthor"></label>
+    <label class="fld"><span>File .txt (chọn được nhiều file)</span><input type="file" id="aFile" accept=".txt,text/plain" multiple></label>
+    <label class="fld"><span>Bảng mã của file</span><select id="aEnc"><option value="auto">Tự nhận (UTF-8, nếu lỗi thì GB18030)</option><option value="utf-8">UTF-8</option><option value="gb18030">GB18030 / GBK</option><option value="big5">Big5 (phồn thể)</option><option value="utf-16le">UTF-16</option></select></label>
+    <label class="fld"><span>Hoặc dán chữ Trung vào đây</span><textarea id="aText" placeholder="第一章 ……"></textarea><span class="hint">Mỗi dòng bắt đầu bằng 第…章 / 第…回 được tính là một chương mới.</span></label>
+    <div class="small muted" id="aInfo"></div>
+  </div>
+  <div class="foot"><button class="btn" data-close>Hủy</button><button class="btn primary" id="aOk">Thêm vào tủ</button></div>
+</div></div>
+
+<div class="modal" id="mName" hidden><div class="sheet" role="dialog" aria-labelledby="mNameH">
+  <header><h2 id="mNameH">Thêm name / Chỉnh name</h2><button class="x" data-close aria-label="Đóng">×</button></header>
+  <div class="body">
+    <label class="fld"><span>Tiếng Trung</span><input id="nZh"></label>
+    <div class="fld"><span>Hán Việt</span><input id="nHv" aria-label="Hán Việt">
+      <div class="mini"><button data-case="use">Dùng</button><button data-case="first">Hoa chữ đầu</button><button data-case="two">Hoa 2 chữ đầu</button><button data-case="lastlow">Thường chữ cuối</button><button data-case="all">Hoa toàn bộ</button></div></div>
+    <div class="fld"><span>Tiếng Anh</span><div class="inl"><input id="nEn" placeholder="Tự gõ, ví dụ Lin Dong"><button class="btn" data-use="nEn">Dùng</button></div></div>
+    <div class="fld"><span>Vietphrase</span><div class="inl"><select id="nVp"></select><button class="btn" data-use="nVp">Dùng</button></div></div>
+    <div class="fld"><span>Name trong kho</span><div class="inl"><select id="nKho"></select><button class="btn" data-use="nKho">Dùng</button></div></div>
+    <label class="fld"><span>Name sẽ lưu</span><input id="nOut" style="font-weight:600"></label>
+  </div>
+  <div class="foot"><button class="btn danger" id="nDel" style="margin-right:auto">Xóa name</button><button class="btn" id="nSaveKho">Lưu vào kho chung</button><button class="btn primary" id="nSaveBook">Lưu cho truyện này</button></div>
+</div></div>
+
+<div class="modal" id="mMgr" hidden><div class="sheet" role="dialog" aria-labelledby="mMgrH">
+  <header><h2 id="mMgrH">Quản lý name</h2><button class="x" data-close aria-label="Đóng">×</button></header>
+  <div class="body">
+    <div class="tabs"><button id="gBook" aria-pressed="true">Truyện này</button><button id="gKho" aria-pressed="false">Kho chung</button></div>
+    <input id="gFind" class="sel-in" placeholder="Tìm theo chữ Trung hoặc tiếng Việt" aria-label="Tìm name">
+    <div class="nlist" id="gList"></div>
+    <div class="small muted" id="gInfo"></div>
+  </div>
+  <div class="foot">
+    <button class="btn danger" id="gClear" style="margin-right:auto">Xóa tất cả</button>
+    <label class="btn filebtn">Nhập Names.txt<input type="file" id="gImport" accept=".txt,text/plain"></label>
+    <button class="btn" id="gExport">Xuất Names.txt</button>
+  </div>
+</div></div>
+
+<div class="modal" id="mDict" hidden><div class="sheet" role="dialog" aria-labelledby="mDictH">
+  <header><h2 id="mDictH">Từ điển</h2><button class="x" data-close aria-label="Đóng">×</button></header>
+  <div class="body">
+    <p class="small muted" style="margin:0">Thứ tự tra khi convert: Name truyện này → Kho name chung → Vietphrase (cụm dài nhất) → Hán Việt từng chữ. File tải lên dùng định dạng <code>中文=nghĩa1/nghĩa2</code>, một dòng một mục.</p>
+    <div id="dRows"></div>
+  </div>
+  <div class="foot"><button class="btn danger" id="dReset" style="margin-right:auto">Gỡ từ điển đã tải lên</button><button class="btn primary" data-close>Xong</button></div>
+</div></div>
+
+<div class="modal" id="mInfo" hidden><div class="sheet" role="dialog" aria-labelledby="mInfoH">
+  <header><h2 id="mInfoH">Thông tin truyện</h2><button class="x" data-close aria-label="Đóng">×</button></header>
+  <div class="body">
+    <label class="fld"><span>Tên tiếng Việt</span><input id="iVi"><span class="hint" id="iZh"></span></label>
+    <label class="fld"><span>Tác giả</span><input id="iAuthor"></label>
+    <label class="fld"><span>Ghi chú cho Claude khi dịch</span><textarea id="iNotes" style="min-height:100px" placeholder="Ví dụ: tiên hiệp, nam chính lạnh lùng; nam chính xưng ta, gọi sư phụ là sư tôn; giữ văn phong cổ trang."></textarea></label>
+  </div>
+  <div class="foot"><button class="btn" data-close>Hủy</button><button class="btn primary" id="iOk">Lưu</button></div>
+</div></div>
+
+<div id="job" hidden><span id="jobTxt"></span><button id="jobStop">Dừng</button></div>
+<div id="toast" hidden role="status"></div>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const ESC = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+const esc = s => String(s).replace(/[&<>"']/g, c => ESC[c]);
+// WEB = bản web độc lập (không có window.claude): ẩn Claude dịch, tải file kiểu thường
+const WEB = !window.claude;
+if (WEB) document.documentElement.classList.add('web');
+
+/* ================= storage ================= */
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const DB = (() => {
+  const STORES = ['books','chapters','trans','kv'];
+  const mem = Object.fromEntries(STORES.map(s => [s, new Map()]));
+  let p = null, memMode = false;
+  function open(){
+    if (p) return p;
+    p = new Promise(res => {
+      let done = false;
+      const fin = v => { if (done) return; done = true; if (!v) memMode = true; res(v); };
+      try{
+        const r = indexedDB.open('thu-cac', 1);
+        r.onupgradeneeded = () => { const d = r.result; STORES.forEach(n => { if (!d.objectStoreNames.contains(n)) d.createObjectStore(n); }); };
+        r.onsuccess = () => fin(r.result);
+        r.onerror = () => fin(null);
+        r.onblocked = () => fin(null);
+        setTimeout(() => fin(null), 5000);
+      }catch(e){ fin(null); }
+    });
+    return p;
+  }
+  const req = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  async function os(s, mode){ const d = await open(); return d ? d.transaction(s, mode).objectStore(s) : null; }
+  const range = pre => IDBKeyRange.bound(pre, pre + '￿');
+  const memPre = (s, pre) => [...mem[s].keys()].filter(k => k.startsWith(pre)).sort();
+  return {
+    get isMem(){ return memMode; }, open,
+    async get(s, k){ const o = await os(s, 'readonly'); return o ? req(o.get(k)) : mem[s].get(k); },
+    async put(s, k, v){ const o = await os(s, 'readwrite'); if (!o){ mem[s].set(k, v); return; } return req(o.put(v, k)); },
+    async del(s, k){ const o = await os(s, 'readwrite'); if (!o){ mem[s].delete(k); return; } return req(o.delete(k)); },
+    async all(s){ const o = await os(s, 'readonly'); return o ? req(o.getAll()) : [...mem[s].values()]; },
+    async keys(s, pre){ const o = await os(s, 'readonly'); return o ? req(o.getAllKeys(range(pre))) : memPre(s, pre); },
+    async entries(s){
+      const d = await open();
+      if (!d) return [...mem[s].entries()];
+      const t = d.transaction(s, 'readonly').objectStore(s);
+      const [ks, vs] = await Promise.all([req(t.getAllKeys()), req(t.getAll())]);
+      return ks.map((k, i) => [k, vs[i]]);
+    },
+    async delPrefix(s, pre){ const o = await os(s, 'readwrite'); if (!o){ memPre(s, pre).forEach(k => mem[s].delete(k)); return; } return req(o.delete(range(pre))); },
+    async putMany(s, list){
+      const d = await open();
+      if (!d){ list.forEach(([k, v]) => mem[s].set(k, v)); return; }
+      await new Promise((res, rej) => {
+        const t = d.transaction(s, 'readwrite'); const o = t.objectStore(s);
+        list.forEach(([k, v]) => o.put(v, k));
+        t.oncomplete = res; t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+      });
+    }
+  };
+})();
+const ck = (id, i) => id + ':' + String(i).padStart(6, '0');
+
+/* ================= dictionaries ================= */
+const D = { hv:new Map(), vp:new Map(), kho:new Map(), book:new Map(), vpMax:1, nameMax:1, bVp:0, bHv:0, uVp:0, uHv:0, loaded:false };
+function parseDict(text, map){
+  if (!text) return 0;
+  let n = 0;
+  for (const line of text.replace(/^﻿/, '').split(/\r?\n/)){
+    const i = line.indexOf('=');
+    if (i <= 0) continue;
+    const k = line.slice(0, i).trim();
+    if (!k || k[0] === '#') continue;
+    map.set(k, line.slice(i + 1).trim()); n++;
+  }
+  return n;
+}
+function recalcNameMax(){
+  let m = 1;
+  for (const k of D.kho.keys()) if (k.length > m) m = k.length;
+  for (const k of D.book.keys()) if (k.length > m) m = k.length;
+  D.nameMax = Math.min(m, 24);
+}
+async function fetchText(u){ try{ const r = await fetch(u); return r.ok ? await r.text() : ''; }catch(e){ return ''; } }
+async function loadDicts(){
+  D.vp = new Map(); D.hv = new Map();
+  const [vp, hv] = await Promise.all([fetchText('vietphrase.txt'), fetchText('hanviet.txt')]);
+  D.bVp = parseDict(vp, D.vp); D.bHv = parseDict(hv, D.hv);
+  // Trợ từ hay gặp: để trống nghĩa đầu cho câu văn gọn hơn (vẫn chọn lại được trong bảng Name)
+  D.vp.set('的', '/của/đích');
+  D.vp.set('得', 'được/đắc/phải');
+  let uvp = '', uhv = '';
+  try{ uvp = await DB.get('kv', 'dict:vp') || ''; uhv = await DB.get('kv', 'dict:hv') || ''; }catch(e){}
+  D.uVp = parseDict(uvp, D.vp); D.uHv = parseDict(uhv, D.hv);
+  let kho = {};
+  try{ kho = await DB.get('kv', 'names:kho') || {}; }catch(e){}
+  D.kho = new Map(Object.entries(kho));
+  let m = 1; for (const k of D.vp.keys()) if (k.length > m) m = k.length;
+  D.vpMax = Math.min(m, 24);
+  recalcNameMax();
+  D.loaded = true;
+}
+
+/* ================= convert engine ================= */
+const HAN_RE = /\p{Script=Han}/u;
+const isHan = ch => HAN_RE.test(ch);
+const hasHan = s => HAN_RE.test(s || '');
+const PMAP = {'，':',','。':'.','．':'.','！':'!','？':'?','：':':','；':';','、':',','“':'“','”':'”','‘':'‘','’':'’','「':'“','」':'”','『':'‘','』':'’','《':'«','》':'»','〈':'‹','〉':'›','（':'(','）':')','【':'[','】':']','〔':'[','〕':']','［':'[','］':']','…':'…','—':'—','～':'~','·':'·','•':'·','〃':'"','＂':'"','＇':"'"};
+const ASCII_P = /[.,!?;:"'()\[\]{}~]/;
+const OPEN = new Set(['“','‘','(','[','«','‹','{']);
+const END = new Set(['.','!','?','…']);
+const first = v => { const i = v.indexOf('/'); return (i < 0 ? v : v.slice(0, i)).trim(); };
+const capFirst = s => s.replace(/^([^\p{L}\p{N}]*)(\p{L})/u, (m, a, b) => a + b.toUpperCase());
+const titleCase = s => s.split(/\s+/).filter(Boolean).map(w => capFirst(w.toLowerCase())).join(' ');
+
+function nameAt(zh, i){
+  for (let L = Math.min(D.nameMax, zh.length - i); L >= 1; L--){
+    const sub = zh.substr(i, L);
+    let v = D.book.get(sub); if (v != null) return { L, v, src:'nb' };
+    v = D.kho.get(sub); if (v != null) return { L, v, src:'nk' };
+  }
+  return null;
+}
+function tokenize(zh){
+  const names = [];
+  if (D.book.size || D.kho.size){
+    for (let i = 0; i < zh.length;){
+      const ch = String.fromCodePoint(zh.codePointAt(i));
+      if (isHan(ch)){ const m = nameAt(zh, i); if (m){ names.push({ s:i, e:i + m.L, v:first(m.v), src:m.src }); i += m.L; continue; } }
+      i += ch.length;
+    }
+  }
+  const out = []; let ni = 0;
+  for (let i = 0; i < zh.length;){
+    if (ni < names.length && names[ni].s === i){ const n = names[ni++]; out.push({ t:'w', s:n.s, e:n.e, v:n.v, src:n.src }); i = n.e; continue; }
+    const ch = String.fromCodePoint(zh.codePointAt(i));
+    if (isHan(ch)){
+      const lim = (ni < names.length ? names[ni].s : zh.length) - i;
+      let hit = false;
+      for (let L = Math.min(D.vpMax, lim); L >= 2; L--){
+        const v = D.vp.get(zh.substr(i, L));
+        if (v !== undefined){ out.push({ t:'w', s:i, e:i + L, v:first(v), src:'vp' }); i += L; hit = true; break; }
+      }
+      if (hit) continue;
+      const v1 = D.vp.get(ch);
+      out.push(v1 !== undefined ? { t:'w', s:i, e:i + ch.length, v:first(v1), src:'vp' } : { t:'w', s:i, e:i + ch.length, v:D.hv.get(ch) ?? ch, src:'hv' });
+      i += ch.length; continue;
+    }
+    if (/\s/.test(ch)){ i += ch.length; continue; }
+    const pm = PMAP[ch];
+    if (pm !== undefined || ASCII_P.test(ch)){ out.push({ t:'p', s:i, e:i + ch.length, v:pm ?? ch }); i += ch.length; continue; }
+    let j = i;
+    while (j < zh.length){
+      const c2 = String.fromCodePoint(zh.codePointAt(j));
+      if (isHan(c2) || /\s/.test(c2) || PMAP[c2] !== undefined || ASCII_P.test(c2)) break;
+      j += c2.length;
+    }
+    out.push({ t:'o', s:i, e:j, v:zh.slice(i, j).normalize('NFKC') }); i = j;
+  }
+  return out;
+}
+function render(tokens, html){
+  let out = '', cap = true, prev = '', dq = false, lastP = '';
+  const put = s => html ? esc(s) : s;
+  for (const t of tokens){
+    if (t.t === 'w' || t.t === 'o'){
+      let v = t.v;
+      if (!v) continue;
+      if (cap && /[\p{L}\p{N}]/u.test(v)){ v = capFirst(v); cap = false; }
+      const sp = prev && prev !== 'open' ? ' ' : '';
+      if (html && t.t === 'w') out += sp + '<span class="w' + (t.src === 'nb' || t.src === 'nk' ? ' nm' : '') + '" data-s="' + t.s + '" data-e="' + t.e + '">' + esc(v) + '</span>';
+      else out += sp + put(v);
+      prev = 'w'; lastP = '';
+      continue;
+    }
+    let c = t.v;
+    if (c === '"'){ c = dq ? '”' : '“'; dq = !dq; }
+    if ((c === '…' || c === '—') && lastP === c) continue;
+    lastP = c;
+    if (OPEN.has(c)){
+      out += (prev && prev !== 'open' ? ' ' : '') + put(c); prev = 'open';
+      if (c === '“' || c === '‘') cap = true;
+    } else if (c === '—'){
+      out += (prev && prev !== 'open' ? ' ' : '') + put(c); prev = 'close';
+    } else {
+      out += put(c);
+      prev = END.has(c) ? 'end' : 'close';
+      if (END.has(c)) cap = true;
+    }
+  }
+  return out;
+}
+const convertPlain = zh => render(tokenize(zh), false);
+const hanViet = zh => [...zh].map(c => isHan(c) ? (D.hv.get(c) ?? c) : c).join(' ').replace(/\s+/g, ' ').trim();
+
+function cnToNum(s){
+  if (/^\d+$/.test(s)) return +s;
+  const d = {零:0,〇:0,一:1,二:2,两:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9};
+  if (!/[十百千万]/.test(s)) return +[...s].map(c => d[c] ?? '').join('') || 0;
+  const u = {十:10,百:100,千:1000};
+  let total = 0, sec = 0, num = 0;
+  for (const c of s){
+    if (c in d) num = d[c];
+    else if (c in u){ sec += (num || 1) * u[c]; num = 0; }
+    else if (c === '万'){ total += (sec + num) * 10000; sec = 0; num = 0; }
+  }
+  return total + sec + num;
+}
+const CH_RE = /^第\s*([0-9０-９零〇一二两三四五六七八九十百千万]+)\s*([章节回卷集])\s*[:：、.．\s]*(.*)$/;
+function chapterTitle(zhTitle, idx){
+  const z = (zhTitle || '').trim();
+  if (!z) return 'Chương ' + (idx + 1);
+  const m = z.normalize('NFKC').match(CH_RE);
+  if (m){
+    const unit = {章:'Chương',节:'Tiết',回:'Hồi',卷:'Quyển',集:'Tập'}[m[2]];
+    const rest = m[3] ? (hasHan(m[3]) ? convertPlain(m[3]) : m[3]) : '';
+    return unit + ' ' + cnToNum(m[1]) + (rest ? ': ' + rest : '');
+  }
+  return hasHan(z) ? convertPlain(z) : z;
+}
+function bookTitle(b){
+  if (!b) return '';
+  if (b.viTitle) return b.viTitle;
+  if (hasHan(b.zhTitle)) return titleCase(convertPlain(b.zhTitle).replace(/[«»]/g, ''));
+  return b.zhTitle || 'Truyện chưa đặt tên';
+}
+const authorName = b => b.author ? (hasHan(b.author) ? titleCase(hanViet(b.author)) : b.author) : '';
+const splitParas = zh => (zh || '').split(/\n+/).map(s => s.replace(/^[\s　]+|[\s　]+$/g, '')).filter(Boolean);
+
+/* ================= app state ================= */
+const S = { view:'lib', book:null, idx:0, chap:null, paras:[], trans:null, transSet:new Set(), mode:'cv', streaming:null };
+const DEF = { bg:null, fg:null, shadow:false, fs:19, lh:1.7, font:'Literata', align:'left', indent:0, tier:'default' };
+let ST = Object.assign({}, DEF, LS.get('tc-settings', {}));
+const FONTS = {
+  'Literata':'"Literata",Georgia,serif', 'Noto Serif':'"Noto Serif",Georgia,serif', 'Merriweather':'"Merriweather",Georgia,serif',
+  'Be Vietnam Pro':'"Be Vietnam Pro",system-ui,sans-serif', 'Helvetica':'Helvetica,Arial,sans-serif', 'Times New Roman':'"Times New Roman",Times,serif',
+  'Georgia':'Georgia,serif', 'Tahoma':'Tahoma,Verdana,sans-serif'
+};
+const BG_SW = ['#e9e3d2','#ffffff','#000000','#cfcfcf','#a8e2a0','#a9d3ec','#e3fbff','#7f7f7f','#f7d6d9','#6e2a2a','#5cbf98','#c9a5e8','#147a49','#f3efe6'];
+const FG_SW = ['#f1ece0','#ffffff','#111111','#d0d0d0','#a8e2a0','#a9d3ec','#e3fbff','#7f7f7f','#f2b8bd','#7a2323','#5cbf98','#9b6fd0','#147a49','#3b3426'];
+
+function lum(hex){
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return 1;
+  const n = parseInt(m[1], 16);
+  return [n >> 16 & 255, n >> 8 & 255, n & 255].map(c => { c /= 255; return c <= .03928 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); }).reduce((a, c, i) => a + c * [.2126, .7152, .0722][i], 0);
+}
+function applySettings(){
+  const r = document.documentElement.style;
+  if (ST.bg){
+    const dark = lum(ST.bg) < .2;
+    r.setProperty('--rb', ST.bg);
+    r.setProperty('--rf', ST.fg || (dark ? '#d8d1c1' : '#1f1d18'));
+    r.setProperty('--link', dark ? '#8fd47a' : '#2b7a1a');
+    r.setProperty('--head', dark ? 'color-mix(in srgb, var(--rb) 92%, #ffffff)' : 'color-mix(in srgb, var(--rb) 70%, #ffffff)');
+  } else {
+    ['--rb','--link','--head'].forEach(k => r.removeProperty(k));
+    if (ST.fg) r.setProperty('--rf', ST.fg); else r.removeProperty('--rf');
+  }
+  const darkText = !ST.bg ? matchMedia('(prefers-color-scheme: dark)').matches : lum(ST.bg) < .2;
+  r.setProperty('--fs', ST.fs + 'px');
+  r.setProperty('--lh', String(ST.lh));
+  r.setProperty('--rfont', FONTS[ST.font] || FONTS.Literata);
+  r.setProperty('--align', ST.align);
+  r.setProperty('--indent', ST.indent + 'em');
+  r.setProperty('--shadow', ST.shadow ? (darkText ? '0 1px 2px rgba(0,0,0,.9)' : '0 1px 1px rgba(0,0,0,.3)') : 'none');
+  LS.set('tc-settings', ST);
+  $('#fsOut').textContent = ST.fs;
+  $('#lhOut').textContent = ST.lh.toFixed(1);
+  $('#cFont').value = ST.font;
+  $('#cShadow').checked = ST.shadow;
+  $('#cTier').value = ST.tier;
+  $('#cBg').value = ST.bg || '#e9e3d2';
+  $('#cFg').value = ST.fg || '#1f1d18';
+  $$('#swBg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c === ST.bg)));
+  $$('#swFg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c === ST.fg)));
+  $$('.aligns [data-al]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.al === ST.align)));
+}
+
+/* ================= small UI helpers ================= */
+let toastT = 0;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3200); }
+function openModal(id){ $('#' + id).hidden = false; closePopup(); }
+function closeModal(id){ $('#' + id).hidden = true; }
+const anyModal = () => $$('.modal').find(m => !m.hidden);
+let dl = null;
+async function saveFile(filename, text){
+  if (!dl && WEB){
+    try{
+      const url = URL.createObjectURL(new Blob([text], { type:'application/octet-stream' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.hidden = true;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      toast('Đã tải file ' + filename);
+    }catch(e){ toast('Trình duyệt không cho tải file.'); }
+    return;
+  }
+  if (!dl){ toast('Chế độ xem này không cho tải file. Hãy mở trang trên claude.ai.'); return; }
+  try{ await dl.save({ filename, data:new Blob([text], { type:'text/plain' }) }); toast('Đã lưu file ' + filename); }
+  catch(e){ if (e && e.code !== 'declined') toast('Không lưu được file (' + (e.code || 'lỗi') + ').'); }
+}
+async function readFileText(file, enc){
+  const buf = await file.arrayBuffer();
+  const u8 = new Uint8Array(buf);
+  if (enc === 'auto'){
+    if (u8[0] === 0xFF && u8[1] === 0xFE) return new TextDecoder('utf-16le').decode(buf);
+    if (u8[0] === 0xFE && u8[1] === 0xFF) return new TextDecoder('utf-16be').decode(buf);
+    try{ return new TextDecoder('utf-8', { fatal:true }).decode(buf); }
+    catch(e){ try{ return new TextDecoder('gb18030').decode(buf); }catch(e2){ return new TextDecoder('utf-8').decode(buf); } }
+  }
+  return new TextDecoder(enc).decode(buf);
+}
+function show(view){
+  S.view = view;
+  $('#viewLib').hidden = view !== 'lib';
+  $('#viewToc').hidden = view !== 'toc';
+  $('#viewRead').hidden = view !== 'read';
+  $('#gear').hidden = view !== 'read';
+  $('#panel').hidden = true;
+  closePopup();
+  LS.set('tc-last', { view, book:S.book ? S.book.id : null });
+}
+
+/* ================= library ================= */
+async function renderLib(){
+  show('lib');
+  S.book = null; LS.set('tc-last', { view:'lib', book:null });
+  const books = (await DB.all('books')).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  $('#libEmpty').hidden = books.length > 0;
+  $('#books').innerHTML = books.map(b => {
+    const read = b.lastRead != null ? 'Đang đọc chương ' + (b.lastRead + 1) : 'Chưa đọc';
+    const au = authorName(b);
+    return '<div class="book" data-id="' + esc(b.id) + '"><div style="min-width:0"><h2>' + esc(bookTitle(b)) + '</h2>' +
+      '<div class="meta">' + (b.zhTitle && hasHan(b.zhTitle) ? esc(b.zhTitle) + ' · ' : '') + (au ? esc(au) + ' · ' : '') + b.count + ' chương · ' + read + '</div></div>' +
+      '<div class="acts"><button class="btn primary" data-act="read">Đọc tiếp</button><button class="btn" data-act="toc">Mục lục</button><button class="btn danger" data-act="del">Xóa</button></div></div>';
+  }).join('');
+  updateDictStat();
+}
+function updateDictStat(){
+  const f = n => n.toLocaleString('vi-VN');
+  $('#dictStat').textContent = !D.loaded ? 'Đang nạp từ điển…' :
+    'Từ điển: Vietphrase ' + f(D.vp.size) + ' cụm · Hán Việt ' + f(D.hv.size) + ' chữ · Kho name ' + f(D.kho.size) + ' tên' + (D.uVp || D.uHv ? ' (có file bạn tải lên)' : '');
+}
+$('#books').addEventListener('click', async e => {
+  const btn = e.target.closest('button[data-act]'); if (!btn) return;
+  const id = btn.closest('.book').dataset.id, act = btn.dataset.act;
+  if (act === 'read') openBook(id);
+  else if (act === 'toc') openToc(id);
+  else if (act === 'del'){
+    const acts = btn.parentElement;
+    acts.innerHTML = '<span class="small">Xóa truyện này cùng bản dịch?</span><button class="btn danger" data-act="del2">Xóa</button><button class="btn" data-act="cancel">Hủy</button>';
+  } else if (act === 'cancel') renderLib();
+  else if (act === 'del2'){
+    await DB.delPrefix('chapters', id + ':'); await DB.delPrefix('trans', id + ':'); await DB.del('books', id);
+    toast('Đã xóa truyện'); renderLib();
+  }
+});
+
+/* ---------- add book / append chapters ---------- */
+let addMode = 'new';
+function splitChapters(text){
+  text = text.replace(/\r\n?/g, '\n');
+  const re = /^[ \t　]*(第[ \t]*[0-9０-９零〇一二两三四五六七八九十百千万]+[ \t]*[章节回][^\n]{0,60})$/gm;
+  const heads = []; let m;
+  while ((m = re.exec(text))) heads.push({ i:m.index, end:m.index + m[0].length, title:m[1].trim() });
+  if (!heads.length){ const t = text.trim(); return t ? [{ zhTitle:'', zh:t }] : []; }
+  const out = [];
+  const pre = text.slice(0, heads[0].i).trim();
+  if (pre && pre.length > 40) out.push({ zhTitle:'Mở đầu', zh:pre });
+  heads.forEach((h, k) => {
+    const body = text.slice(h.end, k + 1 < heads.length ? heads[k + 1].i : text.length).trim();
+    if (body) out.push({ zhTitle:h.title, zh:body });
+  });
+  return out;
+}
+function openAdd(mode){
+  addMode = mode;
+  $('#mAddH').textContent = mode === 'new' ? 'Thêm truyện' : 'Thêm chương vào "' + bookTitle(S.book) + '"';
+  $('#aTitleF').hidden = $('#aAuthorF').hidden = mode !== 'new';
+  $('#aOk').textContent = mode === 'new' ? 'Thêm vào tủ' : 'Thêm chương';
+  ['#aTitle','#aAuthor','#aText'].forEach(s => $(s).value = '');
+  $('#aFile').value = ''; $('#aInfo').textContent = '';
+  openModal('mAdd');
+}
+async function gatherAdd(){
+  const enc = $('#aEnc').value, files = [...$('#aFile').files];
+  let chapters = [];
+  for (const f of files){
+    const txt = await readFileText(f, enc);
+    const chs = splitChapters(txt);
+    if (chs.length === 1 && !chs[0].zhTitle) chs[0].zhTitle = f.name.replace(/\.txt$/i, '');
+    chapters = chapters.concat(chs);
+  }
+  const pasted = $('#aText').value;
+  if (pasted.trim()) chapters = chapters.concat(splitChapters(pasted));
+  return chapters;
+}
+async function previewAdd(){
+  const chs = await gatherAdd();
+  const bad = chs.length && !chs.some(c => hasHan(c.zh));
+  $('#aInfo').textContent = chs.length ? 'Tìm thấy ' + chs.length + ' chương' + (chs.length > 1 ? ', từ "' + chs[0].zhTitle + '" đến "' + chs[chs.length - 1].zhTitle + '"' : '') + '.' + (bad ? ' Không thấy chữ Trung: có thể sai bảng mã, hãy chọn GB18030.' : '') : '';
+}
+$('#aFile').addEventListener('change', previewAdd);
+$('#aEnc').addEventListener('change', previewAdd);
+$('#aText').addEventListener('input', () => { clearTimeout(previewAdd.t); previewAdd.t = setTimeout(previewAdd, 400); });
+$('#aOk').addEventListener('click', async () => {
+  const chs = await gatherAdd();
+  if (!chs.length){ $('#aInfo').textContent = 'Chưa có nội dung. Hãy chọn file .txt hoặc dán chữ Trung.'; return; }
+  if (addMode === 'new'){
+    const files = [...$('#aFile').files];
+    const id = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    let zhTitle = $('#aTitle').value.trim() || (files[0] ? files[0].name.replace(/\.txt$/i, '') : '') || 'Truyện mới';
+    const b = { id, zhTitle, viTitle:'', author:$('#aAuthor').value.trim(), notes:'', names:{}, titles:chs.map(c => c.zhTitle), count:chs.length, lastRead:null, createdAt:Date.now(), updatedAt:Date.now() };
+    await DB.putMany('chapters', chs.map((c, i) => [ck(id, i), c]));
+    await DB.put('books', id, b);
+    closeModal('mAdd'); toast('Đã thêm ' + chs.length + ' chương');
+    openToc(id);
+  } else {
+    const b = S.book, start = b.count;
+    await DB.putMany('chapters', chs.map((c, i) => [ck(b.id, start + i), c]));
+    b.titles = (b.titles || []).concat(chs.map(c => c.zhTitle));
+    b.count += chs.length; b.updatedAt = Date.now();
+    await DB.put('books', b.id, b);
+    closeModal('mAdd'); toast('Đã thêm ' + chs.length + ' chương');
+    openToc(b.id);
+  }
+});
+const SAMPLE = '第一回 宴桃园豪杰三结义 斩黄巾英雄首立功\n话说天下大势，分久必合，合久必分。周末七国分争，并入于秦。及秦灭之后，楚、汉分争，又并入于汉。汉朝自高祖斩白蛇而起义，一统天下，后来光武中兴，传至献帝，遂分为三国。\n推其致乱之由，殆始于桓、灵二帝。桓帝禁锢善类，崇信宦官。及桓帝崩，灵帝即位，大将军窦武、太傅陈蕃共相辅佐。时有宦官曹节等弄权，窦武、陈蕃谋诛之，机事不密，反为所害，中涓自此愈横。';
+$('#bSample').addEventListener('click', async e => {
+  if (e.currentTarget.disabled) return;
+  e.currentTarget.disabled = true;
+  const id = 'b' + Date.now().toString(36) + 'smp';
+  const chs = splitChapters(SAMPLE);
+  await DB.putMany('chapters', chs.map((c, i) => [ck(id, i), c]));
+  await DB.put('books', id, { id, zhTitle:'三国演义', viTitle:'Tam Quốc Diễn Nghĩa (đoạn mẫu)', author:'罗贯中', notes:'Tiểu thuyết lịch sử cổ điển, văn phong trang trọng.', names:{}, titles:chs.map(c => c.zhTitle), count:chs.length, lastRead:null, createdAt:Date.now(), updatedAt:Date.now() });
+  $('#bSample').disabled = false;
+  openBook(id, 0);
+});
+
+/* ================= book / toc ================= */
+async function loadBook(id){
+  const b = await DB.get('books', id);
+  if (!b) return null;
+  b.names = b.names || {};
+  S.book = b;
+  D.book = new Map(Object.entries(b.names));
+  recalcNameMax();
+  const keys = await DB.keys('trans', id + ':');
+  S.transSet = new Set(keys.map(k => +k.slice(id.length + 1)));
+  return b;
+}
+async function openToc(id){
+  const b = (S.book && S.book.id === id) ? S.book : await loadBook(id);
+  if (!b){ renderLib(); return; }
+  show('toc');
+  $('#tTitle').textContent = bookTitle(b);
+  const au = authorName(b);
+  $('#tMeta').textContent = [hasHan(b.zhTitle) ? b.zhTitle : '', au, b.count + ' chương', (S.transSet.size || !WEB) ? 'Claude đã dịch ' + S.transSet.size + ' chương' : ''].filter(Boolean).join(' · ');
+  $('#tTo').max = $('#tFrom').max = b.count;
+  if (!JOB.running){
+    const start = (b.lastRead ?? 0) + 1;
+    $('#tFrom').value = Math.min(start, b.count);
+    $('#tTo').value = Math.min(start + 9, b.count);
+  }
+  const list = $('#tocList');
+  if (!b.titles || b.titles.length !== b.count){
+    const chs = await Promise.all(Array.from({ length:b.count }, (_, i) => DB.get('chapters', ck(b.id, i))));
+    b.titles = chs.map(c => (c && c.zhTitle) || '');
+    DB.put('books', b.id, b).catch(() => {});
+  }
+  list.innerHTML = b.titles.map((t, i) => '<li' + (i === b.lastRead ? ' class="cur"' : '') + '><button data-i="' + i + '"><span class="n">' + (i + 1) + '</span><span class="t">' + esc(chapterTitle(t, i)) + '</span>' + (S.transSet.has(i) ? '<span class="cl">Claude</span>' : '') + '</button></li>').join('');
+  updateClaudeUI();
+  const cur = list.querySelector('li.cur'); if (cur) cur.scrollIntoView({ block:'center' });
+  else window.scrollTo(0, 0);
+}
+$('#tocList').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (b) openBook(S.book.id, +b.dataset.i); });
+$('#tRead').addEventListener('click', () => openBook(S.book.id));
+$('#tAppend').addEventListener('click', () => openAdd('append'));
+$('#tNames').addEventListener('click', () => openMgr('book'));
+$('#tInfo').addEventListener('click', () => {
+  const b = S.book;
+  $('#iVi').value = b.viTitle || bookTitle(b);
+  $('#iZh').textContent = 'Tên gốc: ' + b.zhTitle;
+  $('#iAuthor').value = b.author || '';
+  $('#iNotes').value = b.notes || '';
+  openModal('mInfo');
+});
+$('#iOk').addEventListener('click', async () => {
+  const b = S.book;
+  b.viTitle = $('#iVi').value.trim(); b.author = $('#iAuthor').value.trim(); b.notes = $('#iNotes').value.trim();
+  b.updatedAt = Date.now();
+  await DB.put('books', b.id, b);
+  closeModal('mInfo'); toast('Đã lưu thông tin truyện');
+  if (S.view === 'toc') openToc(b.id); else renderChapter();
+});
+
+/* ================= reader ================= */
+async function openBook(id, idx){
+  const b = (S.book && S.book.id === id) ? S.book : await loadBook(id);
+  if (!b){ renderLib(); return; }
+  show('read');
+  const i = idx ?? b.lastRead ?? 0;
+  await loadChapter(Math.max(0, Math.min(i, b.count - 1)), idx == null);
+}
+async function loadChapter(idx, restoreScroll){
+  const b = S.book;
+  S.idx = idx;
+  S.chap = await DB.get('chapters', ck(b.id, idx)) || { zhTitle:'', zh:'' };
+  S.paras = splitParas(S.chap.zh);
+  S.trans = await DB.get('trans', ck(b.id, idx)) || null;
+  S.mode = (LS.get('tc-mode', 'cv') === 'cl' && S.trans) ? 'cl' : 'cv';
+  if (jobHere()) S.mode = 'cl';
+  if (!JOB.running) setNote('');
+  renderChapter();
+  b.lastRead = idx; b.updatedAt = Date.now();
+  DB.put('books', b.id, b).catch(() => {});
+  LS.set('tc-last', { view:'read', book:b.id });
+  const sc = LS.get('tc-scroll', {})[b.id];
+  window.scrollTo(0, restoreScroll && sc && sc.idx === idx ? sc.y : 0);
+}
+function renderChapter(){
+  const b = S.book; if (!b || S.view !== 'read') return;
+  closePopup();
+  $('#rTitle').textContent = bookTitle(b);
+  const cvTitle = chapterTitle(S.chap.zhTitle, S.idx);
+  $('#rSub').textContent = (S.mode === 'cl' && S.trans && S.trans.title) ? S.trans.title : cvTitle;
+  $('#rPos').textContent = (S.idx + 1) + ' / ' + b.count;
+  $$('[data-nav="prev"]').forEach(x => x.disabled = S.idx <= 0);
+  $$('[data-nav="next"]').forEach(x => x.disabled = S.idx >= b.count - 1);
+  $('.seg').hidden = WEB && S.transSet.size === 0;
+  $('#mCv').setAttribute('aria-pressed', String(S.mode === 'cv'));
+  $('#mCl').setAttribute('aria-pressed', String(S.mode === 'cl'));
+  const box = $('#rText');
+  const sn = $('#savedNote'); sn.hidden = true;
+  if (S.mode === 'cv'){
+    box.innerHTML = S.paras.length ? S.paras.map((p, i) => '<p data-p="' + i + '">' + render(tokenize(p), true) + '</p>').join('') : '<p class="muted">Chương này trống.</p>';
+  } else if (jobHere() && S.streaming != null){
+    drawStream(S.streaming);
+  } else if (S.trans){
+    box.innerHTML = S.trans.text.split('\n').filter(Boolean).map(p => '<p>' + esc(p) + '</p>').join('');
+    sn.hidden = false;
+    const dt = new Date(S.trans.at);
+    sn.textContent = 'Bản Claude dịch · ' + dt.toLocaleString('vi-VN', { hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit', year:'numeric' }) + (S.trans.truncated ? ' · Có đoạn bị cắt ngắn, bấm Dịch lại nếu thiếu.' : '');
+  } else if (WEB){
+    box.innerHTML = '<div class="placeholder"><b>Chương này chưa có bản Claude dịch.</b><span>Bản web không có nút Claude dịch. Hãy dịch chương ở bản trên claude.ai, bấm Sao lưu ở đó, rồi bấm Khôi phục ở đây.</span></div>';
+  } else {
+    box.innerHTML = '<div class="placeholder"><b>Chương này chưa có bản Claude dịch.</b><span>Bấm nút bên dưới để Claude dịch. Chương dài sẽ được dịch từng phần, chữ hiện dần trong lúc dịch.</span><button class="btn primary" data-claude>Claude dịch chương này</button></div>';
+  }
+  updateClaudeUI();
+}
+function rerenderKeep(){ const y = window.scrollY; renderChapter(); window.scrollTo(0, y); }
+function go(delta){
+  const n = S.idx + delta;
+  if (!S.book || n < 0 || n >= S.book.count) return;
+  loadChapter(n, false);
+}
+document.addEventListener('click', e => {
+  const nav = e.target.closest('[data-nav]');
+  if (nav){ const k = nav.dataset.nav; if (k === 'prev') go(-1); else if (k === 'next') go(1); else openToc(S.book.id); return; }
+  const g = e.target.closest('[data-go="lib"]'); if (g){ renderLib(); return; }
+  if (e.target.closest('[data-claude]')) translateCurrent();
+});
+$('#mCv').addEventListener('click', () => { S.mode = 'cv'; LS.set('tc-mode', 'cv'); renderChapter(); });
+$('#mCl').addEventListener('click', () => { S.mode = 'cl'; LS.set('tc-mode', 'cl'); renderChapter(); });
+let scT = 0;
+window.addEventListener('scroll', () => {
+  if (S.view !== 'read' || !S.book) return;
+  clearTimeout(scT);
+  scT = setTimeout(() => { const all = LS.get('tc-scroll', {}); all[S.book.id] = { idx:S.idx, y:Math.round(window.scrollY) }; LS.set('tc-scroll', all); }, 400);
+}, { passive:true });
+
+/* ================= name popup ================= */
+const P = { p:-1, s:0, e:0 };
+const popup = $('#popup');
+function selZh(){ return (S.paras[P.p] || '').slice(P.s, P.e); }
+function currentMeaning(z){
+  const b = D.book.get(z); if (b != null) return first(b);
+  const k = D.kho.get(z); if (k != null) return first(k);
+  const v = D.vp.get(z); if (v !== undefined) return v.split('/').map(s => s.trim()).filter(Boolean).join(' / ') || '(để trống)';
+  return convertPlain(z);
+}
+function openPopup(p, s, e){ P.p = p; P.s = s; P.e = e; fillPopup(); popup.hidden = false; placePopup(); }
+function fillPopup(){
+  const z = selZh(), hv = hanViet(z).toLowerCase();
+  $('#pHv').value = hv; $('#pHV').value = titleCase(hv); $('#pZw').value = z; $('#pTr').value = currentMeaning(z); $('#pTc').value = '';
+  $('#pGg').href = 'https://translate.google.com/?sl=zh-CN&tl=vi&op=translate&text=' + encodeURIComponent(z);
+  $('#pBd').href = 'https://www.baidu.com/s?wd=' + encodeURIComponent(z);
+  const para = S.paras[P.p] || '';
+  $('#pExtL').disabled = P.s <= 0; $('#pExtR').disabled = P.e >= para.length;
+  $('#pShrL').disabled = $('#pShrR').disabled = P.e - P.s <= 1;
+  $$('#rText .w.sel').forEach(x => x.classList.remove('sel'));
+  const pe = $('#rText p[data-p="' + P.p + '"]');
+  if (pe) $$('.w', pe).forEach(x => { if (+x.dataset.s < P.e && +x.dataset.e > P.s) x.classList.add('sel'); });
+}
+function placePopup(){
+  if (matchMedia('(max-width:560px)').matches){ popup.style.left = ''; popup.style.top = ''; return; }
+  const a = $('#rText .w.sel'); if (!a) return;
+  const r = a.getBoundingClientRect(), w = popup.offsetWidth, h = popup.offsetHeight;
+  let left = r.left + window.scrollX - 20;
+  left = Math.max(window.scrollX + 8, Math.min(left, window.scrollX + document.documentElement.clientWidth - w - 8));
+  let top = r.bottom + window.scrollY + 8;
+  if (r.bottom + h + 12 > window.innerHeight && r.top - h - 12 > 0) top = r.top + window.scrollY - h - 8;
+  popup.style.left = left + 'px'; popup.style.top = top + 'px';
+}
+function closePopup(){ if (popup.hidden) return; popup.hidden = true; $$('#rText .w.sel').forEach(x => x.classList.remove('sel')); }
+$('#rText').addEventListener('click', e => {
+  const w = e.target.closest('.w'); if (!w || S.mode !== 'cv') return;
+  e.stopPropagation();
+  const p = +w.closest('p').dataset.p;
+  openPopup(p, +w.dataset.s, +w.dataset.e);
+});
+document.addEventListener('click', e => {
+  if (!popup.hidden && !popup.contains(e.target) && !e.target.closest('.w')) closePopup();
+  if (!$('#panel').hidden && !$('#panel').contains(e.target) && !$('#gear').contains(e.target)) { $('#panel').hidden = true; $('#gear').setAttribute('aria-expanded', 'false'); }
+});
+const adjust = (ds, de) => { const len = (S.paras[P.p] || '').length; const s = Math.max(0, P.s + ds), e = Math.min(len, P.e + de); if (e - s >= 1){ P.s = s; P.e = e; fillPopup(); placePopup(); } };
+$('#pExtL').addEventListener('click', () => adjust(-1, 0));
+$('#pExtR').addEventListener('click', () => adjust(0, 1));
+$('#pShrL').addEventListener('click', () => adjust(1, 0));
+$('#pShrR').addEventListener('click', () => adjust(0, -1));
+$('#pClose').addEventListener('click', closePopup);
+$('#pCopy').addEventListener('click', async () => {
+  const z = $('#pZw').value;
+  try{ await navigator.clipboard.writeText(z); toast('Đã sao chép ' + z); }
+  catch(e){ const i = $('#pZw'); i.focus(); i.select(); toast('Hãy bấm Ctrl+C để sao chép'); }
+});
+$$('#popup [data-save]').forEach(b => b.addEventListener('click', () => {
+  const [field, scope] = b.dataset.save.split(':');
+  saveName(selZh(), $('#' + field).value, scope);
+}));
+$('#pEdit').addEventListener('click', () => openNameEditor(selZh()));
+$('#pAdd').addEventListener('click', () => openNameEditor(selZh()));
+$('#pMgr').addEventListener('click', () => openMgr('book'));
+
+async function persistBookNames(){ S.book.names = Object.fromEntries(D.book); S.book.updatedAt = Date.now(); await DB.put('books', S.book.id, S.book); }
+async function persistKho(){ await DB.put('kv', 'names:kho', Object.fromEntries(D.kho)); }
+async function saveName(zh, vi, scope){
+  zh = (zh || '').trim(); vi = (vi || '').trim();
+  if (!zh){ toast('Chưa có chữ Trung.'); return; }
+  if (!vi){ toast('Name đang trống.'); return; }
+  if (scope === 'book'){ if (!S.book){ toast('Hãy mở một truyện trước.'); return; } D.book.set(zh, vi); await persistBookNames(); }
+  else { D.kho.set(zh, vi); await persistKho(); }
+  recalcNameMax();
+  closePopup(); closeModal('mName');
+  if (S.view === 'read') rerenderKeep();
+  toast('Đã lưu: ' + zh + ' = ' + vi + (scope === 'book' ? ' (truyện này)' : ' (kho chung)'));
+}
+
+/* ---------- name editor ---------- */
+function fillNameEditor(zh){
+  $('#nHv').value = titleCase(hanViet(zh));
+  const vp = D.vp.get(zh);
+  const opts = vp === undefined ? [] : [...new Set(vp.split('/').map(s => s.trim()).filter(Boolean))];
+  $('#nVp').innerHTML = opts.length ? opts.map(o => '<option>' + esc(o) + '</option>').join('') : '<option value="">(không có trong Vietphrase)</option>';
+  const kOpts = [];
+  if (D.book.has(zh)) kOpts.push(['Truyện này', D.book.get(zh)]);
+  if (D.kho.has(zh)) kOpts.push(['Kho chung', D.kho.get(zh)]);
+  $('#nKho').innerHTML = kOpts.length ? kOpts.map(([l, v]) => '<option value="' + esc(v) + '">' + esc(l + ': ' + v) + '</option>').join('') : '<option value="">(chưa có name)</option>';
+  $('#nOut').value = kOpts.length ? kOpts[0][1] : $('#nHv').value;
+  $('#nDel').disabled = !kOpts.length;
+  $('#nSaveBook').disabled = !S.book;
+}
+function openNameEditor(zh){
+  $('#nZh').value = zh; $('#nEn').value = '';
+  fillNameEditor(zh);
+  openModal('mName');
+}
+$('#nZh').addEventListener('input', () => fillNameEditor($('#nZh').value.trim()));
+$$('#mName [data-case]').forEach(b => b.addEventListener('click', () => {
+  const words = $('#nHv').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const cap = w => capFirst(w);
+  let r;
+  switch (b.dataset.case){
+    case 'use': r = $('#nHv').value.trim(); break;
+    case 'first': r = words.map((w, i) => i === 0 ? cap(w) : w).join(' '); break;
+    case 'two': r = words.map((w, i) => i < 2 ? cap(w) : w).join(' '); break;
+    case 'lastlow': r = words.map((w, i) => i === words.length - 1 && words.length > 1 ? w : cap(w)).join(' '); break;
+    default: r = words.map(cap).join(' ');
+  }
+  if (b.dataset.case !== 'use') $('#nHv').value = r;
+  $('#nOut').value = r;
+}));
+$$('#mName [data-use]').forEach(b => b.addEventListener('click', () => { const v = $('#' + b.dataset.use).value.trim(); if (v) $('#nOut').value = v; }));
+$('#nSaveBook').addEventListener('click', () => saveName($('#nZh').value, $('#nOut').value, 'book'));
+$('#nSaveKho').addEventListener('click', () => saveName($('#nZh').value, $('#nOut').value, 'kho'));
+$('#nDel').addEventListener('click', async () => {
+  const zh = $('#nZh').value.trim(); const where = [];
+  if (D.book.delete(zh)){ await persistBookNames(); where.push('truyện này'); }
+  if (D.kho.delete(zh)){ await persistKho(); where.push('kho chung'); }
+  recalcNameMax(); closeModal('mName');
+  if (S.view === 'read') rerenderKeep();
+  toast(where.length ? 'Đã xóa name ' + zh + ' (' + where.join(', ') + ')' : 'Không có name để xóa');
+});
+
+/* ---------- name manager ---------- */
+let mgrTab = 'book';
+function openMgr(tab){
+  mgrTab = S.book ? tab : 'kho';
+  $('#gBook').disabled = !S.book;
+  $('#gFind').value = '';
+  drawMgr(); openModal('mMgr');
+}
+function mgrMap(){ return mgrTab === 'book' ? D.book : D.kho; }
+function drawMgr(){
+  $('#gBook').setAttribute('aria-pressed', String(mgrTab === 'book'));
+  $('#gKho').setAttribute('aria-pressed', String(mgrTab === 'kho'));
+  $('#gBook').textContent = 'Truyện này (' + D.book.size + ')';
+  $('#gKho').textContent = 'Kho chung (' + D.kho.size + ')';
+  const q = $('#gFind').value.trim().toLowerCase();
+  const all = [...mgrMap().entries()].filter(([k, v]) => !q || k.includes(q) || v.toLowerCase().includes(q));
+  const shown = all.slice(0, 400);
+  $('#gList').innerHTML = shown.length ? shown.map(([k, v]) => '<div class="nrow" data-k="' + esc(k) + '"><span class="zh">' + esc(k) + '</span><input value="' + esc(v) + '" aria-label="Name của ' + esc(k) + '"><button title="Xóa" aria-label="Xóa">✕</button></div>').join('') : '<div class="small muted" style="padding:8px">' + (q ? 'Không tìm thấy name nào.' : 'Chưa có name. Bấm vào một từ khi đọc bản convert để thêm.') + '</div>';
+  $('#gInfo').textContent = all.length > shown.length ? 'Đang hiện 400 / ' + all.length + ' name. Gõ vào ô tìm để lọc.' : '';
+  $('#gClear').textContent = 'Xóa tất cả';
+  $('#gClear').dataset.arm = '';
+}
+async function persistMgr(){ if (mgrTab === 'book') await persistBookNames(); else await persistKho(); recalcNameMax(); if (S.view === 'read') rerenderKeep(); }
+$('#gBook').addEventListener('click', () => { mgrTab = 'book'; drawMgr(); });
+$('#gKho').addEventListener('click', () => { mgrTab = 'kho'; drawMgr(); });
+$('#gFind').addEventListener('input', drawMgr);
+$('#gList').addEventListener('change', async e => {
+  const row = e.target.closest('.nrow'); if (!row || e.target.tagName !== 'INPUT') return;
+  const v = e.target.value.trim(); if (!v) return;
+  mgrMap().set(row.dataset.k, v); await persistMgr(); toast('Đã lưu ' + row.dataset.k + ' = ' + v);
+});
+$('#gList').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const row = b.closest('.nrow'); mgrMap().delete(row.dataset.k); await persistMgr(); drawMgr();
+});
+$('#gClear').addEventListener('click', async () => {
+  const b = $('#gClear');
+  if (!b.dataset.arm){ b.dataset.arm = '1'; b.textContent = 'Bấm lần nữa để xóa hết'; return; }
+  mgrMap().clear(); await persistMgr(); drawMgr(); toast('Đã xóa tất cả name');
+});
+$('#gImport').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  const m = new Map(); const n = parseDict(await readFileText(f, 'auto'), m);
+  m.forEach((v, k) => mgrMap().set(k, first(v) || v));
+  await persistMgr(); drawMgr(); e.target.value = '';
+  toast('Đã nhập ' + n + ' name');
+});
+$('#gExport').addEventListener('click', () => {
+  const txt = [...mgrMap().entries()].map(([k, v]) => k + '=' + v).join('\r\n');
+  if (!txt){ toast('Chưa có name để xuất.'); return; }
+  const fn = mgrTab === 'book' ? 'Names - ' + bookTitle(S.book).replace(/[\\/:*?"<>|]/g, '') + '.txt' : 'Names.txt';
+  saveFile(fn, txt);
+});
+
+/* ---------- dictionary manager ---------- */
+function drawDict(){
+  const f = n => n.toLocaleString('vi-VN');
+  const rows = [
+    ['Vietphrase', 'Cài sẵn ' + f(D.bVp) + ' cụm' + (D.uVp ? ' · file của bạn ' + f(D.uVp) + ' cụm (được ưu tiên)' : ''), 'vp', 'Tải VietPhrase.txt'],
+    ['Hán Việt', 'Cài sẵn ' + f(D.bHv) + ' chữ' + (D.uHv ? ' · file của bạn ' + f(D.uHv) + ' chữ' : ''), 'hv', 'Tải ChinesePhienAmWords.txt'],
+    ['Kho name chung', f(D.kho.size) + ' name. File Names.txt sẽ được gộp vào kho.', 'names', 'Tải Names.txt']
+  ];
+  $('#dRows').innerHTML = rows.map(([t, d, k, l]) => '<div class="drow"><div><b>' + t + '</b><div class="small muted">' + esc(d) + '</div></div><label class="btn filebtn">' + l + '<input type="file" accept=".txt,text/plain" data-dict="' + k + '"></label></div>').join('');
+}
+function openDict(){ drawDict(); openModal('mDict'); }
+$('#dRows').addEventListener('change', async e => {
+  const inp = e.target.closest('input[data-dict]'); if (!inp || !inp.files[0]) return;
+  const k = inp.dataset.dict;
+  toast('Đang đọc file…');
+  const txt = await readFileText(inp.files[0], 'auto');
+  const test = new Map(); const n = parseDict(txt, test);
+  if (!n){ toast('File không đúng định dạng 中文=nghĩa.'); return; }
+  if (k === 'names'){ test.forEach((v, key) => D.kho.set(key, first(v) || v)); await persistKho(); recalcNameMax(); }
+  else { await DB.put('kv', 'dict:' + k, txt); await loadDicts(); if (S.book){ D.book = new Map(Object.entries(S.book.names || {})); recalcNameMax(); } }
+  drawDict(); updateDictStat();
+  if (S.view === 'read') rerenderKeep();
+  toast('Đã nạp ' + n.toLocaleString('vi-VN') + ' mục');
+});
+$('#dReset').addEventListener('click', async () => {
+  await DB.del('kv', 'dict:vp'); await DB.del('kv', 'dict:hv');
+  await loadDicts(); if (S.book){ D.book = new Map(Object.entries(S.book.names || {})); recalcNameMax(); }
+  drawDict(); updateDictStat(); if (S.view === 'read') rerenderKeep();
+  toast('Đã gỡ từ điển tải lên, dùng lại bộ cài sẵn');
+});
+
+/* ================= Claude translation ================= */
+let sample = null, claudeState = 'loading';
+const JOB = { running:false, ctl:null, idx:-1, bookId:null, label:'' };
+const jobHere = () => JOB.running && S.book && JOB.bookId === S.book.id && JOB.idx === S.idx;
+const HIDE_CODES = new Set(['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed']);
+function errText(e){
+  const c = e && e.code;
+  if (HIDE_CODES.has(c)) return 'Claude chưa được phép dùng trên trang này, hoặc tài khoản không dùng được Claude ở đây.';
+  return ({
+    rate_limited:'Bạn đã dùng Claude khá nhiều trong lúc này. Đợi một lúc rồi bấm dịch tiếp.',
+    session_expired:'Phiên đăng nhập claude.ai đã hết hạn. Hãy đăng nhập lại rồi thử lại.',
+    refused:'Claude từ chối dịch đoạn này.',
+    prompt_too_large:'Đoạn gửi đi quá dài.',
+    empty_completion:'Claude không trả về nội dung. Bấm Dịch lại để thử lại.'
+  })[c] || 'Kết nối bị gián đoạn. Bấm Dịch lại để thử lại.';
+}
+function updateClaudeUI(){
+  const off = claudeState === 'off', loading = claudeState === 'loading';
+  const btn = $('#bClaude');
+  btn.hidden = off;
+  btn.disabled = loading || (JOB.running && !jobHere());
+  btn.textContent = jobHere() ? 'Dừng dịch' : (S.trans ? 'Dịch lại' : 'Claude dịch chương này');
+  $('#mCl').disabled = false;
+  const note = $('#cNote');
+  if (!note.classList.contains('err')){
+    note.textContent = WEB ? '' : off ? 'Claude dịch chỉ chạy khi mở trang này trên claude.ai và đã đăng nhập.' : loading ? 'Đang kết nối Claude…' : '';
+  }
+  $$('[data-claude]').forEach(b => { b.disabled = off || loading || JOB.running; if (off) b.textContent = 'Mở trang trên claude.ai để dùng Claude dịch'; });
+  $('#tStart').disabled = off || loading;
+  if (off && !JOB.running) $('#tState').textContent = 'Claude dịch chỉ chạy khi mở trang này trên claude.ai và đã đăng nhập.';
+  $('#tStart').textContent = JOB.running ? 'Dừng' : 'Bắt đầu dịch';
+  $('#job').hidden = !JOB.running;
+  if (JOB.running) $('#jobTxt').textContent = JOB.label;
+}
+function setNote(msg, err){ const n = $('#cNote'); n.textContent = msg || ''; n.classList.toggle('err', !!err); }
+
+function chunkParas(paras, size){
+  const chunks = []; let cur = [], len = 0;
+  for (const p of paras){
+    if (cur.length && len + p.length > size){ chunks.push(cur); cur = []; len = 0; }
+    cur.push(p); len += p.length;
+  }
+  if (cur.length) chunks.push(cur);
+  return chunks;
+}
+function glossary(zh, bookNames){
+  const m = new Map();
+  for (const [k, v] of D.kho) if (zh.includes(k)) m.set(k, first(v));
+  for (const [k, v] of Object.entries(bookNames)) if (zh.includes(k)) m.set(k, first(v));
+  return [...m.entries()].sort((a, b) => b[0].length - a[0].length).slice(0, 250);
+}
+function buildPrompt(o){
+  const L = [
+    'Bạn là dịch giả chuyên dịch truyện mạng Trung Quốc sang tiếng Việt. Hãy dịch phần nguyên văn bên dưới thành văn tiếng Việt tự nhiên, trôi chảy như truyện do người Việt viết, giữ đúng nghĩa, giọng văn và không khí của truyện.',
+    '', 'Quy tắc:',
+    '- Mỗi đoạn nguyên văn dịch thành đúng một đoạn tiếng Việt, giữ nguyên thứ tự. Các đoạn cách nhau bằng một dòng trống.',
+    '- Chọn xưng hô hợp bối cảnh và quan hệ nhân vật (cổ trang, tiên hiệp: ta – ngươi, chàng – nàng, huynh – đệ, sư phụ – đồ nhi...; hiện đại: tôi – cậu, anh – em...) và giữ nhất quán.',
+    '- Tên người, địa danh, môn phái, công pháp, bảo vật: dùng đúng bảng tên nếu có; tên chưa có trong bảng thì dùng âm Hán Việt và viết hoa.',
+    '- Thành ngữ, điển cố: dịch sang cách nói tiếng Việt tương đương; giữ từ Hán Việt khi đó là cách nói quen thuộc trong truyện Trung.',
+    '- Không thêm lời bình, chú thích hay tiêu đề phụ. Không tóm tắt, không bỏ sót câu nào.',
+    o.withTitle ? '- Dòng đầu tiên của câu trả lời là tên chương đã dịch, bắt đầu bằng "## ", sau đó một dòng trống rồi đến nội dung.' : '- Chỉ trả về nội dung bản dịch, không viết tên chương.'
+  ];
+  if (o.book) L.push('', 'Truyện: ' + o.book);
+  if (o.notes) L.push('Ghi chú của người đọc: ' + o.notes);
+  if (o.gloss.length){ L.push('', 'Bảng tên (nguyên văn = tên tiếng Việt):'); o.gloss.forEach(([k, v]) => L.push(k + ' = ' + v)); }
+  if (o.prev) L.push('', 'Đoạn ngay trước đó (đã dịch, chỉ để nối mạch, KHÔNG dịch lại):', o.prev);
+  L.push('', o.parts > 1 ? 'Nguyên văn (phần ' + o.part + '/' + o.parts + ' của chương):' : 'Nguyên văn:');
+  if (o.withTitle) L.push('Tên chương: ' + o.zhTitle);
+  L.push('<<<', o.text, '>>>');
+  return L.join('\n');
+}
+function parseOut(text, withTitle){
+  let t = text.replace(/^\s*<<<\s*|\s*>>>\s*$/g, '').trim();
+  let title = '';
+  if (withTitle){ const m = t.match(/^#{1,3}\s*(.+)\n?/); if (m){ title = m[1].trim(); t = t.slice(m[0].length).trim(); } }
+  const paras = (/\n\s*\n/.test(t) ? t.split(/\n\s*\n/) : t.split('\n')).map(s => s.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean);
+  return { title, paras };
+}
+function drawStream(st){
+  const box = $('#rText');
+  const ps = st.paras;
+  box.innerHTML = ps.length ? ps.map((p, i) => '<p' + (i === ps.length - 1 ? ' class="stream"' : '') + '>' + esc(p) + '</p>').join('') : '<p class="stream muted">Claude đang đọc nguyên văn…</p>';
+  if (st.title) $('#rSub').textContent = st.title;
+}
+async function translateChapter(b, idx, ctl, labelPrefix){
+  const ch = await DB.get('chapters', ck(b.id, idx));
+  if (!ch) return;
+  const paras = splitParas(ch.zh);
+  const chunks = chunkParas(paras, 2200);
+  const gloss = glossary((ch.zhTitle || '') + '\n' + ch.zh, b.names || {});
+  const withTitle = !!(ch.zhTitle && hasHan(ch.zhTitle));
+  let done = [], title = '', truncated = false;
+  JOB.idx = idx; JOB.bookId = b.id;
+  const live = () => S.view === 'read' && jobHere() && S.mode === 'cl';
+  for (let k = 0; k < chunks.length; k++){
+    JOB.label = labelPrefix + (chunks.length > 1 ? ' · phần ' + (k + 1) + '/' + chunks.length : '');
+    updateClaudeUI();
+    const isFirst = k === 0 && withTitle;
+    const prompt = buildPrompt({ text:chunks[k].join('\n\n'), withTitle:isFirst, zhTitle:ch.zhTitle, book:bookTitle(b), notes:b.notes, gloss, prev:done.slice(-2).join('\n\n'), part:k + 1, parts:chunks.length });
+    S.streaming = { title, paras:done.slice() };
+    if (live()) drawStream(S.streaming);
+    const res = await sample(prompt, {
+      signal:ctl.signal, modelTier:ST.tier, cache:false,
+      onText: ({ text }) => {
+        const r = parseOut(text, isFirst);
+        S.streaming = { title:isFirst ? r.title : title, paras:done.concat(r.paras) };
+        if (live()) drawStream(S.streaming);
+      }
+    });
+    const r = parseOut(res.text, isFirst);
+    if (isFirst) title = r.title;
+    done = done.concat(r.paras);
+    if (res.truncated) truncated = true;
+  }
+  const rec = { title:title || chapterTitle(ch.zhTitle, idx), text:done.join('\n'), at:Date.now(), tier:ST.tier, truncated };
+  await DB.put('trans', ck(b.id, idx), rec);
+  if (S.book && S.book.id === b.id){ S.transSet.add(idx); if (S.idx === idx) S.trans = rec; }
+}
+async function runJob(book, list, labelFn){
+  if (JOB.running) return;
+  JOB.running = true; JOB.ctl = new AbortController(); S.streaming = null;
+  setNote('');
+  const prog = $('#tProg'), pw = $('#tProgWrap');
+  pw.hidden = list.length < 2; prog.style.width = '0%';
+  let ok = 0, err = null;
+  try{
+    for (let n = 0; n < list.length; n++){
+      if (JOB.ctl.signal.aborted) break;
+      await translateChapter(book, list[n], JOB.ctl, labelFn(n, list[n]));
+      ok++;
+      prog.style.width = Math.round(ok / list.length * 100) + '%';
+      $('#tState').textContent = 'Đã dịch ' + ok + ' / ' + list.length + ' chương';
+    }
+  }catch(e){ err = e; }
+  JOB.running = false; JOB.idx = -1; JOB.bookId = null; S.streaming = null;
+  if (err && err.code === 'cancelled'){ toast('Đã dừng dịch'); }
+  else if (err){
+    if (HIDE_CODES.has(err.code)) claudeState = 'off';
+    setNote(errText(err), true);
+    $('#tState').textContent = errText(err);
+  } else if (list.length > 1) toast('Claude đã dịch xong ' + ok + ' chương');
+  if (S.view === 'read' && S.book){ if (!S.trans) S.trans = await DB.get('trans', ck(S.book.id, S.idx)) || null; renderChapter(); }
+  if (S.view === 'toc' && S.book) openToc(S.book.id);
+  updateClaudeUI();
+}
+function translateCurrent(){
+  if (JOB.running){ if (jobHere()) JOB.ctl.abort(); else toast('Claude đang dịch chương khác. Bấm Dừng ở thanh phía trên nếu muốn đổi.'); return; }
+  if (!sample) return;
+  S.mode = 'cl'; LS.set('tc-mode', 'cl');
+  $('#cNote').classList.remove('err');
+  renderChapter();
+  const i0 = S.idx;
+  runJob(S.book, [i0], () => 'Claude đang dịch chương ' + (i0 + 1));
+}
+$('#bClaude').addEventListener('click', translateCurrent);
+$('#jobStop').addEventListener('click', () => JOB.ctl && JOB.ctl.abort());
+$('#tStart').addEventListener('click', async () => {
+  if (JOB.running){ JOB.ctl.abort(); return; }
+  if (!sample) return;
+  const b = S.book;
+  let from = Math.max(1, Math.min(+$('#tFrom').value || 1, b.count)), to = Math.max(1, Math.min(+$('#tTo').value || from, b.count));
+  if (to < from) [from, to] = [to, from];
+  const redo = $('#tRedo').checked;
+  const list = [];
+  for (let i = from - 1; i < to; i++) if (redo || !S.transSet.has(i)) list.push(i);
+  if (!list.length){ $('#tState').textContent = 'Các chương này đã được dịch. Đánh dấu "Dịch lại" nếu muốn dịch lần nữa.'; return; }
+  $('#tState').textContent = 'Bắt đầu dịch ' + list.length + ' chương…';
+  runJob(b, list, (n, i) => 'Claude đang dịch chương ' + (i + 1) + ' (' + (n + 1) + '/' + list.length + ')');
+});
+
+/* ================= backup ================= */
+$('#bBackup').addEventListener('click', async () => {
+  const data = { app:'thu-cac', v:1, at:Date.now(), books:await DB.entries('books'), chapters:await DB.entries('chapters'), trans:await DB.entries('trans'), kho:Object.fromEntries(D.kho) };
+  const d = new Date(), pad = n => String(n).padStart(2, '0');
+  saveFile('thu-cac-sao-luu-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '.json', JSON.stringify(data));
+});
+$('#fRestore').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try{
+    const data = JSON.parse(await readFileText(f, 'utf-8'));
+    if (data.app !== 'thu-cac') throw new Error('bad');
+    await DB.putMany('books', data.books || []);
+    await DB.putMany('chapters', data.chapters || []);
+    await DB.putMany('trans', data.trans || []);
+    Object.entries(data.kho || {}).forEach(([k, v]) => D.kho.set(k, v));
+    await persistKho(); recalcNameMax();
+    toast('Đã khôi phục ' + (data.books || []).length + ' truyện');
+    renderLib();
+  }catch(err){ toast('File không phải bản sao lưu của Thư Các.'); }
+  e.target.value = '';
+});
+
+/* ================= settings panel ================= */
+$('#swBg').innerHTML = BG_SW.map(c => '<button data-c="' + c + '" style="background:' + c + ';color:' + (lum(c) < .2 ? '#eee' : '#222') + '" aria-label="Nền ' + c + '">A</button>').join('');
+$('#swFg').innerHTML = FG_SW.map(c => '<button data-c="' + c + '" style="background:#fafafa;color:' + c + ';' + (lum(c) > .8 ? 'background:#555;' : '') + '" aria-label="Chữ ' + c + '">A</button>').join('');
+$('#cFont').innerHTML = Object.keys(FONTS).map(f => '<option>' + f + '</option>').join('');
+$('#gear').addEventListener('click', () => { const p = $('#panel'); p.hidden = !p.hidden; $('#gear').setAttribute('aria-expanded', String(!p.hidden)); closePopup(); });
+$('#swBg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ST.bg = b.dataset.c; ST.fg = null; applySettings(); });
+$('#swFg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ST.fg = b.dataset.c; applySettings(); });
+$('#cBg').addEventListener('input', e => { ST.bg = e.target.value; applySettings(); });
+$('#cFg').addEventListener('input', e => { ST.fg = e.target.value; applySettings(); });
+$('#cShadow').addEventListener('change', e => { ST.shadow = e.target.checked; applySettings(); });
+$('#fsDn').addEventListener('click', () => { ST.fs = Math.max(12, ST.fs - 1); applySettings(); });
+$('#fsUp').addEventListener('click', () => { ST.fs = Math.min(40, ST.fs + 1); applySettings(); });
+$('#lhDn').addEventListener('click', () => { ST.lh = Math.max(1, Math.round((ST.lh - .1) * 10) / 10); applySettings(); });
+$('#lhUp').addEventListener('click', () => { ST.lh = Math.min(3, Math.round((ST.lh + .1) * 10) / 10); applySettings(); });
+$('#cFont').addEventListener('change', e => { ST.font = e.target.value; applySettings(); });
+$('#cTier').addEventListener('change', e => { ST.tier = e.target.value; applySettings(); });
+$$('.aligns [data-al]').forEach(b => b.addEventListener('click', () => { ST.align = b.dataset.al; applySettings(); }));
+$$('.aligns [data-ind]').forEach(b => b.addEventListener('click', () => { ST.indent = Math.max(0, Math.min(4, ST.indent + (+b.dataset.ind))); applySettings(); }));
+$('#cReset').addEventListener('click', () => { ST = Object.assign({}, DEF, { tier:ST.tier }); applySettings(); });
+$('#pfName').addEventListener('click', () => { $('#panel').hidden = true; openMgr('book'); });
+$('#pfDict').addEventListener('click', () => { $('#panel').hidden = true; openDict(); });
+
+/* ================= global wiring ================= */
+$('#bAdd').addEventListener('click', () => openAdd('new'));
+$('#bAdd2').addEventListener('click', () => openAdd('new'));
+$('#bDict').addEventListener('click', openDict);
+$('#bKho').addEventListener('click', () => openMgr('kho'));
+$$('.modal').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m || e.target.closest('[data-close]')) m.hidden = true; });
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape'){
+    const m = anyModal(); if (m){ m.hidden = true; return; }
+    if (!popup.hidden){ closePopup(); return; }
+    if (!$('#panel').hidden){ $('#panel').hidden = true; return; }
+  }
+  if (S.view !== 'read' || anyModal() || /INPUT|TEXTAREA|SELECT/.test(document.activeElement && document.activeElement.tagName)) return;
+  if (e.key === 'ArrowLeft') go(-1);
+  else if (e.key === 'ArrowRight') go(1);
+});
+window.addEventListener('resize', () => { if (!popup.hidden) placePopup(); });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applySettings);
+
+/* ================= boot ================= */
+(async function boot(){
+  applySettings();
+  await DB.open();
+  $('#memBanner').hidden = !DB.isMem;
+  show('lib');
+  $('#libEmpty').hidden = true;
+  await loadDicts();
+  const last = LS.get('tc-last', {});
+  if (last.book && (last.view === 'read' || last.view === 'toc')){
+    const b = await loadBook(last.book);
+    if (b){ if (last.view === 'read') await openBook(b.id); else await openToc(b.id); }
+    else await renderLib();
+  } else await renderLib();
+  updateDictStat();
+})();
+(async function connect(){
+  try{
+    const c = window.claude && window.claude.use ? window.claude : null;
+    if (!c){ claudeState = 'off'; updateClaudeUI(); return; }
+    c.use('downloads').then(x => { dl = x; }).catch(() => {});
+    sample = await c.use('sample');
+    claudeState = sample ? 'ready' : 'off';
+  }catch(e){ claudeState = 'off'; }
+  updateClaudeUI();
+})();
+})();
+</script>
+</body>
+</html>
