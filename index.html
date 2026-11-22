@@ -50,6 +50,8 @@ a{color:var(--link)}
 .small{font-size:13px}
 svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none}
 .banner{background:color-mix(in srgb, var(--danger) 14%, var(--rb)); color:var(--rf); padding-block:10px; font-size:14px}
+.banner.info{background:var(--band)}
+.banner .linkbtn{margin-left:8px}
 
 /* ---------- library ---------- */
 .libhead{background:var(--head); border-bottom:1px solid var(--line); padding-block:28px 22px}
@@ -201,6 +203,9 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 .drow b{font-weight:600}
 .filebtn{position:relative; overflow:hidden}
 .filebtn input{position:absolute; inset:0; opacity:0; cursor:pointer}
+.filebtn:focus-within{outline:2px solid var(--link); outline-offset:2px}
+.rslist{margin:0; padding-left:20px; max-height:32vh; overflow:auto; display:grid; gap:2px}
+.warn{color:var(--danger)}
 
 #toast{position:fixed; z-index:60; left:50%; transform:translateX(-50%); bottom:calc(90px + env(safe-area-inset-bottom, 0px)); background:#2b2b2b; color:#fff; padding:10px 16px; border-radius:8px; font-size:14px; max-width:calc(100vw - 32px); box-shadow:0 6px 18px rgba(0,0,0,.25)}
 #job{position:fixed; z-index:35; left:50%; transform:translateX(-50%); top:calc(10px + env(safe-area-inset-top, 0px)); background:#123d45; color:#fff; padding:8px 8px 8px 14px; border-radius:999px; display:flex; gap:10px; align-items:center; font-size:14px; max-width:calc(100vw - 32px); box-shadow:0 6px 18px rgba(0,0,0,.25)}
@@ -232,6 +237,7 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 </svg>
 
 <div id="memBanner" class="banner gutter" hidden><div class="wrap">Trình duyệt đang chặn lưu dữ liệu, nên truyện và name sẽ mất khi bạn đóng trang. Hãy mở trang ở cửa sổ thường (không ẩn danh).</div></div>
+<div id="dbWait" class="banner info gutter" hidden role="status"><div class="wrap">Đang mở dữ liệu… Trình duyệt mở kho truyện hơi chậm, bạn chờ một chút.<button class="linkbtn" id="dbMem" hidden>Dùng tạm, không lưu</button></div></div>
 
 <!-- ============ LIBRARY ============ -->
 <section id="viewLib" hidden>
@@ -399,9 +405,9 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
     <label class="fld" id="aTitleF"><span>Tên truyện</span><input id="aTitle" placeholder="Để trống thì lấy theo tên file"></label>
     <label class="fld" id="aAuthorF"><span>Tác giả</span><input id="aAuthor"></label>
     <label class="fld"><span>File .txt (chọn được nhiều file)</span><input type="file" id="aFile" accept=".txt,text/plain" multiple></label>
-    <label class="fld"><span>Bảng mã của file</span><select id="aEnc"><option value="auto">Tự nhận (UTF-8, nếu lỗi thì GB18030)</option><option value="utf-8">UTF-8</option><option value="gb18030">GB18030 / GBK</option><option value="big5">Big5 (phồn thể)</option><option value="utf-16le">UTF-16</option></select></label>
-    <label class="fld"><span>Hoặc dán chữ Trung vào đây</span><textarea id="aText" placeholder="第一章 ……"></textarea><span class="hint">Mỗi dòng bắt đầu bằng 第…章 / 第…回 được tính là một chương mới.</span></label>
-    <div class="small muted" id="aInfo"></div>
+    <label class="fld"><span>Bảng mã của file</span><select id="aEnc"><option value="auto">Tự nhận (UTF-8, GB18030 hoặc Big5)</option><option value="utf-8">UTF-8</option><option value="gb18030">GB18030 / GBK</option><option value="big5">Big5 (phồn thể)</option><option value="utf-16le">UTF-16</option></select></label>
+    <label class="fld"><span>Hoặc dán chữ Trung vào đây</span><textarea id="aText" placeholder="第一章 ……"></textarea><span class="hint">Mỗi dòng tiêu đề 第…章 / 第…回 (có thể có 第…卷 hoặc 正文 đứng trước) được tính là một chương mới.</span></label>
+    <div class="small muted" id="aInfo" role="status"></div>
   </div>
   <div class="foot"><button class="btn" data-close>Hủy</button><button class="btn primary" id="aOk">Thêm vào tủ</button></div>
 </div></div>
@@ -440,6 +446,7 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
   <div class="body">
     <p class="small muted" style="margin:0">Thứ tự tra khi convert: Name truyện này → Kho name chung → Vietphrase (cụm dài nhất) → Hán Việt từng chữ. File tải lên dùng định dạng <code>中文=nghĩa1/nghĩa2</code>, một dòng một mục.</p>
     <div id="dRows"></div>
+    <div class="small muted" id="dProg" role="status"></div>
   </div>
   <div class="foot"><button class="btn danger" id="dReset" style="margin-right:auto">Gỡ từ điển đã tải lên</button><button class="btn primary" data-close>Xong</button></div>
 </div></div>
@@ -452,6 +459,12 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
     <label class="fld"><span>Ghi chú cho Claude khi dịch</span><textarea id="iNotes" style="min-height:100px" placeholder="Ví dụ: tiên hiệp, nam chính lạnh lùng; nam chính xưng ta, gọi sư phụ là sư tôn; giữ văn phong cổ trang."></textarea></label>
   </div>
   <div class="foot"><button class="btn" data-close>Hủy</button><button class="btn primary" id="iOk">Lưu</button></div>
+</div></div>
+
+<div class="modal" id="mRestore" hidden><div class="sheet" role="dialog" aria-labelledby="mRestoreH">
+  <header><h2 id="mRestoreH">Khôi phục sao lưu</h2><button class="x" data-close aria-label="Đóng">×</button></header>
+  <div class="body" id="rsBody"></div>
+  <div class="foot"><button class="btn" data-close>Hủy</button><button class="btn danger" id="rsOver">Ghi đè</button><button class="btn" id="rsCopy">Thêm thành bản sao</button><button class="btn primary" id="rsKeep">Giữ bản đang có</button></div>
 </div></div>
 
 <div id="job" hidden><span id="jobTxt"></span><button id="jobStop">Dừng</button></div>
@@ -476,29 +489,78 @@ const LS = {
 const DB = (() => {
   const STORES = ['books','chapters','trans','kv'];
   const mem = Object.fromEntries(STORES.map(s => [s, new Map()]));
-  let p = null, memMode = false;
+  let p = null, memMode = false, toMem = null;
+  // Chỉ chuyển sang chế độ bộ nhớ khi mở thật sự lỗi (hoặc người dùng tự chọn). Mở chậm thì cứ chờ.
   function open(){
     if (p) return p;
     p = new Promise(res => {
       let done = false;
-      const fin = v => { if (done) return; done = true; if (!v) memMode = true; res(v); };
+      const fin = v => { if (done) return false; done = true; if (!v) memMode = true; res(v); return true; };
+      toMem = () => fin(null);
       try{
+        if (typeof indexedDB === 'undefined' || !indexedDB){ fin(null); return; }
         const r = indexedDB.open('thu-cac', 1);
         r.onupgradeneeded = () => { const d = r.result; STORES.forEach(n => { if (!d.objectStoreNames.contains(n)) d.createObjectStore(n); }); };
-        r.onsuccess = () => fin(r.result);
+        r.onsuccess = () => {
+          const d = r.result;
+          d.onversionchange = () => { try{ d.close(); }catch(e){} };
+          if (!fin(d)) try{ d.close(); }catch(e){}
+        };
         r.onerror = () => fin(null);
-        r.onblocked = () => fin(null);
-        setTimeout(() => fin(null), 5000);
+        // onblocked: tab khác còn giữ kết nối cũ; khi tab đó đóng, onsuccess sẽ chạy nên chỉ cần chờ
       }catch(e){ fin(null); }
     });
     return p;
   }
   const req = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const txDone = t => new Promise((res, rej) => { t.oncomplete = () => res(); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error); });
   async function os(s, mode){ const d = await open(); return d ? d.transaction(s, mode).objectStore(s) : null; }
   const range = pre => IDBKeyRange.bound(pre, pre + '￿');
   const memPre = (s, pre) => [...mem[s].keys()].filter(k => k.startsWith(pre)).sort();
+  const clone = v => v === undefined ? v : (typeof structuredClone === 'function' ? structuredClone(v) : JSON.parse(JSON.stringify(v)));
   return {
     get isMem(){ return memMode; }, open,
+    useMem(){ if (toMem) toMem(); },
+    // Đọc bản mới nhất rồi ghi lại trong CÙNG một giao dịch (không ghi đè thay đổi của tab khác).
+    // fn(bản ghi hiện có) trả về bản ghi mới; trả về undefined thì không ghi.
+    async update(s, k, fn){
+      const d = await open();
+      if (!d){ const v = fn(clone(mem[s].get(k))); if (v !== undefined) mem[s].set(k, v); return v; }
+      const t = d.transaction(s, 'readwrite'), o = t.objectStore(s);
+      let out, err = null;
+      const g = o.get(k);
+      g.onsuccess = () => {
+        try{ out = fn(g.result); if (out !== undefined) o.put(out, k); }
+        catch(e){ err = e; try{ t.abort(); }catch(e2){} }
+      };
+      try{ await txDone(t); }catch(e){ throw err || e; }
+      return out;
+    },
+    // Ghi s/k = v chỉ khi gs/gk còn tồn tại (ví dụ: chỉ lưu bản dịch nếu truyện chưa bị xóa)
+    async putIf(s, k, v, gs, gk){
+      const d = await open();
+      if (!d){ if (!mem[gs].has(gk)) return false; mem[s].set(k, v); return true; }
+      const t = d.transaction([s, gs], 'readwrite');
+      let ok = false;
+      const c = t.objectStore(gs).count(gk);
+      c.onsuccess = () => { if (c.result > 0){ ok = true; t.objectStore(s).put(v, k); } };
+      await txDone(t);
+      return ok;
+    },
+    // Duyệt các bản ghi có khóa bắt đầu bằng pre theo từng mẻ nhỏ (không nạp cả kho vào bộ nhớ)
+    async scan(s, pre, fn, n = 200){
+      const d = await open();
+      if (!d){ for (const k of memPre(s, pre)) await fn(k, mem[s].get(k)); return; }
+      let lower = pre, excl = false;
+      for (;;){
+        const r = IDBKeyRange.bound(lower, pre + '￿', excl, false);
+        const o = d.transaction(s, 'readonly').objectStore(s);
+        const [ks, vs] = await Promise.all([req(o.getAllKeys(r, n)), req(o.getAll(r, n))]);
+        for (let i = 0; i < ks.length; i++) await fn(ks[i], vs[i]);
+        if (ks.length < n) break;
+        lower = ks[ks.length - 1]; excl = true;
+      }
+    },
     async get(s, k){ const o = await os(s, 'readonly'); return o ? req(o.get(k)) : mem[s].get(k); },
     async put(s, k, v){ const o = await os(s, 'readwrite'); if (!o){ mem[s].set(k, v); return; } return req(o.put(v, k)); },
     async del(s, k){ const o = await os(s, 'readwrite'); if (!o){ mem[s].delete(k); return; } return req(o.delete(k)); },
@@ -515,18 +577,50 @@ const DB = (() => {
     async putMany(s, list){
       const d = await open();
       if (!d){ list.forEach(([k, v]) => mem[s].set(k, v)); return; }
-      await new Promise((res, rej) => {
-        const t = d.transaction(s, 'readwrite'); const o = t.objectStore(s);
-        list.forEach(([k, v]) => o.put(v, k));
-        t.oncomplete = res; t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
-      });
+      const t = d.transaction(s, 'readwrite'); const o = t.objectStore(s);
+      list.forEach(([k, v]) => o.put(v, k));
+      await txDone(t);
     }
   };
 })();
 const ck = (id, i) => id + ':' + String(i).padStart(6, '0');
+const tpk = (id, i) => 'tp:' + ck(id, i);   // bản Claude dịch dở (kv), để biết nhanh chương nào dịch dở mà không phải đọc cả bản dịch
+// Báo cho các tab khác đang mở trang (name, kho, truyện bị xóa…). Không có BroadcastChannel thì thôi.
+let BC = null;
+try{ BC = new BroadcastChannel('thu-cac'); }catch(e){ BC = null; }
+const bcast = m => { try{ if (BC) BC.postMessage(m); }catch(e){} };
+function askPersist(){
+  // Xin trình duyệt đừng tự xóa dữ liệu khi máy đầy. Firefox sẽ hiện câu hỏi nên bỏ qua.
+  try{
+    const st = navigator.storage;
+    if (!st || typeof st.persist !== 'function' || /Firefox\//.test(navigator.userAgent)) return;
+    Promise.resolve(typeof st.persisted === 'function' ? st.persisted() : false).then(ok => ok || st.persist()).catch(() => {});
+  }catch(e){}
+}
 
 /* ================= dictionaries ================= */
-const D = { hv:new Map(), vp:new Map(), kho:new Map(), book:new Map(), vpMax:1, nameMax:1, bVp:0, bHv:0, uVp:0, uHv:0, loaded:false };
+// vp2: 2 ký tự đầu của cụm Vietphrase → độ dài cụm dài nhất bắt đầu bằng 2 ký tự đó.
+// n1 / n2: như vậy cho name (truyện này + kho), theo 1 và 2 ký tự đầu. Nhờ đó khi tách từ chỉ thử những độ dài có thể khớp.
+const KEY_MAX = 24;
+const D = { hv:new Map(), vp:new Map(), vp2:new Map(), kho:new Map(), book:new Map(), n1:new Map(), n2:new Map(), bVp:0, bHv:0, uVp:0, uHv:0, loaded:false, prog:0, ver:0 };
+const isStr = x => typeof x === 'string';
+const isNat = x => Number.isInteger(x) && x >= 0;
+const isNum = x => typeof x === 'number' && Number.isFinite(x);
+const isObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+// Bảng name {chữ Trung: name}: chỉ giữ cặp chuỗi → chuỗi; cnt.bad đếm số mục bị bỏ
+function cleanNames(o, cnt){
+  const out = {};
+  if (!isObj(o)){ if (o != null && cnt) cnt.bad++; return out; }
+  for (const k of Object.keys(o)){ const v = o[k]; if (k && isStr(v)) out[k] = v; else if (cnt) cnt.bad++; }
+  return out;
+}
+function lenIdxAdd(m, k){ if (k.length < 2) return; const p = k.slice(0, 2), L = Math.min(k.length, KEY_MAX); if ((m.get(p) || 0) < L) m.set(p, L); }
+function nameIdxAdd(k){ if (!k) return; const L = Math.min(k.length, KEY_MAX); if ((D.n1.get(k[0]) || 0) < L) D.n1.set(k[0], L); lenIdxAdd(D.n2, k); }
+function rebuildNameIdx(){
+  D.n1 = new Map(); D.n2 = new Map();
+  for (const k of D.book.keys()) nameIdxAdd(k);
+  for (const k of D.kho.keys()) nameIdxAdd(k);
+}
 function parseDict(text, map){
   if (!text) return 0;
   let n = 0;
@@ -539,35 +633,81 @@ function parseDict(text, map){
   }
   return n;
 }
-function recalcNameMax(){
-  let m = 1;
-  for (const k of D.kho.keys()) if (k.length > m) m = k.length;
-  for (const k of D.book.keys()) if (k.length > m) m = k.length;
-  D.nameMax = Math.min(m, 24);
+const tick = () => new Promise(r => setTimeout(r, 0));
+// Như parseDict nhưng đọc từng khối rồi nhường luồng, để trang không bị đứng với file 20–40MB.
+async function parseDictAsync(text, map, idx, onProg){
+  if (!text) return 0;
+  let n = 0, pos = text.charCodeAt(0) === 0xFEFF ? 1 : 0;
+  const len = text.length, STEP = 300000;
+  while (pos < len){
+    const stop = Math.min(len, pos + STEP);
+    while (pos < stop){
+      let e = text.indexOf('\n', pos); if (e < 0) e = len;
+      const line = text.slice(pos, e); pos = e + 1;
+      const i = line.indexOf('=');
+      if (i <= 0) continue;
+      const k = line.slice(0, i).trim();
+      if (!k || k[0] === '#') continue;
+      map.set(k, line.slice(i + 1).trim()); n++;
+      if (idx) lenIdxAdd(idx, k);
+    }
+    if (onProg) onProg(Math.min(1, pos / len));
+    if (pos < len) await tick();
+  }
+  return n;
 }
+// Có ít nhất một dòng 中文=nghĩa trong 500 dòng đầu
+function looksLikeDict(text){
+  let pos = 0;
+  for (let n = 0; n < 500 && pos < text.length; n++){
+    let e = text.indexOf('\n', pos); if (e < 0) e = text.length;
+    const line = text.slice(pos, e); pos = e + 1;
+    const i = line.indexOf('=');
+    if (i > 0 && line.slice(0, i).trim() && line.slice(0, i).trim()[0] !== '#') return true;
+  }
+  return false;
+}
+// Trợ từ hay gặp: để trống nghĩa đầu cho câu văn gọn hơn (vẫn chọn lại được trong bảng Name). 著 là dạng phồn thể của 着.
+function tweakVp(map){ map.set('的', '/của/đích'); map.set('得', 'được/đắc/phải'); map.set('著', '/trứ'); }
 async function fetchText(u){ try{ const r = await fetch(u); return r.ok ? await r.text() : ''; }catch(e){ return ''; } }
-async function loadDicts(){
-  D.vp = new Map(); D.hv = new Map();
-  const [vp, hv] = await Promise.all([fetchText('vietphrase.txt'), fetchText('hanviet.txt')]);
-  D.bVp = parseDict(vp, D.vp); D.bHv = parseDict(hv, D.hv);
-  // Trợ từ hay gặp: để trống nghĩa đầu cho câu văn gọn hơn (vẫn chọn lại được trong bảng Name)
-  D.vp.set('的', '/của/đích');
-  D.vp.set('得', 'được/đắc/phải');
-  let uvp = '', uhv = '';
-  try{ uvp = await DB.get('kv', 'dict:vp') || ''; uhv = await DB.get('kv', 'dict:hv') || ''; }catch(e){}
-  D.uVp = parseDict(uvp, D.vp); D.uHv = parseDict(uhv, D.hv);
+async function loadKho(){
   let kho = {};
   try{ kho = await DB.get('kv', 'names:kho') || {}; }catch(e){}
-  D.kho = new Map(Object.entries(kho));
-  let m = 1; for (const k of D.vp.keys()) if (k.length > m) m = k.length;
-  D.vpMax = Math.min(m, 24);
-  recalcNameMax();
-  D.loaded = true;
+  D.kho = new Map(Object.entries(cleanNames(kho)));
+  applyKhoQueue(D.kho);
+  rebuildNameIdx();
 }
+// Dựng bộ từ điển mới (cài sẵn + file đã tải lên) vào Map mới rồi mới thay, để chữ đang hiện không đổi giữa chừng.
+// over: chữ của file vừa chọn (khỏi đọc lại từ IndexedDB).
+async function buildDicts(onProg, over){
+  over = over || {};
+  const vp = new Map(), hv = new Map(), vp2 = new Map();
+  const [vt, ht] = await Promise.all([fetchText('vietphrase.txt'), fetchText('hanviet.txt')]);
+  let uvp = over.vp, uhv = over.hv;
+  try{
+    if (uvp == null) uvp = await DB.get('kv', 'dict:vp');
+    if (uhv == null) uhv = await DB.get('kv', 'dict:hv');
+  }catch(e){}
+  uvp = isStr(uvp) ? uvp : ''; uhv = isStr(uhv) ? uhv : '';
+  const total = (vt.length + ht.length + uvp.length + uhv.length) || 1;
+  let base = 0;
+  const step = len => f => { if (onProg) onProg((base + f * len) / total); };
+  const bVp = await parseDictAsync(vt, vp, vp2, step(vt.length)); base += vt.length;
+  const bHv = await parseDictAsync(ht, hv, null, step(ht.length)); base += ht.length;
+  tweakVp(vp);
+  const uVp = await parseDictAsync(uvp, vp, vp2, step(uvp.length)); base += uvp.length;
+  const uHv = await parseDictAsync(uhv, hv, null, step(uhv.length));
+  Object.assign(D, { vp, hv, vp2, bVp, bHv, uVp, uHv });
+  D.ver++;
+}
+let dictDone = null;
+const dictP = new Promise(r => { dictDone = r; });   // xong khi lần nạp từ điển lúc mở trang xong
+const dictReady = () => dictP;
 
 /* ================= convert engine ================= */
 const HAN_RE = /\p{Script=Han}/u;
-const isHan = ch => HAN_RE.test(ch);
+// Đường tắt cho khối CJK chính; dưới U+2E80 không có chữ Hán nào
+const isHan = ch => { const c = ch.charCodeAt(0); return (c >= 0x4E00 && c <= 0x9FFF) || (c >= 0x2E80 && HAN_RE.test(ch)); };
 const hasHan = s => HAN_RE.test(s || '');
 const PMAP = {'，':',','。':'.','．':'.','！':'!','？':'?','：':':','；':';','、':',','“':'“','”':'”','‘':'‘','’':'’','「':'“','」':'”','『':'‘','』':'’','《':'«','》':'»','〈':'‹','〉':'›','（':'(','）':')','【':'[','】':']','〔':'[','〕':']','［':'[','］':']','…':'…','—':'—','～':'~','·':'·','•':'·','〃':'"','＂':'"','＇':"'"};
 const ASCII_P = /[.,!?;:"'()\[\]{}~]/;
@@ -577,21 +717,39 @@ const first = v => { const i = v.indexOf('/'); return (i < 0 ? v : v.slice(0, i)
 const capFirst = s => s.replace(/^([^\p{L}\p{N}]*)(\p{L})/u, (m, a, b) => a + b.toUpperCase());
 const titleCase = s => s.split(/\s+/).filter(Boolean).map(w => capFirst(w.toLowerCase())).join(' ');
 
+// Name dài nhất bắt đầu tại i (ưu tiên name truyện này). Chỉ thử các độ dài có name thật (bảng n1/n2).
 function nameAt(zh, i){
-  for (let L = Math.min(D.nameMax, zh.length - i); L >= 1; L--){
+  const m1 = D.n1.get(zh[i]); if (!m1) return null;
+  const rest = zh.length - i;
+  let L = m1 >= 2 && rest >= 2 ? Math.min(D.n2.get(zh.substr(i, 2)) || 1, rest) : 1;
+  for (; L >= 1; L--){
     const sub = zh.substr(i, L);
     let v = D.book.get(sub); if (v != null) return { L, v, src:'nb' };
     v = D.kho.get(sub); if (v != null) return { L, v, src:'nk' };
   }
   return null;
 }
+const LATIN_RE = /[\p{Script=Latin}\p{Nd}]/u;
+const DIGIT_RE = /[0-9０-９]/;
+const LETTER_RE = /\p{Script=Latin}/u;
+// Dấu câu nằm giữa một cụm chữ/số Latin mà không được tách: 1.5 / 10:30 / 1,000 / don't
+function joinsRun(zh, j){
+  const c = zh[j], a = zh[j - 1] || '', b = zh[j + 1] || '';
+  if ('.．:：,'.includes(c)) return DIGIT_RE.test(a) && DIGIT_RE.test(b);
+  if ("'’＇".includes(c)) return LETTER_RE.test(a) && LETTER_RE.test(b);
+  return false;
+}
 function tokenize(zh){
   const names = [];
-  if (D.book.size || D.kho.size){
+  if (D.n1.size){
     for (let i = 0; i < zh.length;){
-      const ch = String.fromCodePoint(zh.codePointAt(i));
-      if (isHan(ch)){ const m = nameAt(zh, i); if (m){ names.push({ s:i, e:i + m.L, v:first(m.v), src:m.src }); i += m.L; continue; } }
-      i += ch.length;
+      const c = zh[i], step = zh.codePointAt(i) > 0xFFFF ? 2 : 1;
+      // Name bắt đầu bằng chữ Hán, hoặc bằng chữ/số Latin (như A级) khi đứng đầu một từ
+      if (D.n1.has(c) && (isHan(zh.substr(i, step)) || (LATIN_RE.test(c) && !(i > 0 && LATIN_RE.test(zh[i - 1]))))){
+        const m = nameAt(zh, i);
+        if (m){ names.push({ s:i, e:i + m.L, v:first(m.v), src:m.src }); i += m.L; continue; }
+      }
+      i += step;
     }
   }
   const out = []; let ni = 0;
@@ -601,7 +759,8 @@ function tokenize(zh){
     if (isHan(ch)){
       const lim = (ni < names.length ? names[ni].s : zh.length) - i;
       let hit = false;
-      for (let L = Math.min(D.vpMax, lim); L >= 2; L--){
+      const mx = lim >= 2 ? D.vp2.get(zh.substr(i, 2)) : 0;
+      if (mx) for (let L = Math.min(mx, lim); L >= 2; L--){
         const v = D.vp.get(zh.substr(i, L));
         if (v !== undefined){ out.push({ t:'w', s:i, e:i + L, v:first(v), src:'vp' }); i += L; hit = true; break; }
       }
@@ -615,8 +774,10 @@ function tokenize(zh){
     if (pm !== undefined || ASCII_P.test(ch)){ out.push({ t:'p', s:i, e:i + ch.length, v:pm ?? ch }); i += ch.length; continue; }
     let j = i;
     while (j < zh.length){
+      if (ni < names.length && names[ni].s === j) break;
       const c2 = String.fromCodePoint(zh.codePointAt(j));
-      if (isHan(c2) || /\s/.test(c2) || PMAP[c2] !== undefined || ASCII_P.test(c2)) break;
+      if (isHan(c2) || /\s/.test(c2)) break;
+      if ((PMAP[c2] !== undefined || ASCII_P.test(c2)) && !joinsRun(zh, j)) break;
       j += c2.length;
     }
     out.push({ t:'o', s:i, e:j, v:zh.slice(i, j).normalize('NFKC') }); i = j;
@@ -670,29 +831,51 @@ function cnToNum(s){
   }
   return total + sec + num;
 }
-const CH_RE = /^第\s*([0-9０-９零〇一二两三四五六七八九十百千万]+)\s*([章节回卷集])\s*[:：、.．\s]*(.*)$/;
+const CN_NUM = '0-9０-９零〇一二两三四五六七八九十百千万';
+// Tiêu đề chương; phía trước có thể có tên quyển ngắn (第一卷 风起 / 正文 / 卷一…)
+const CH_RE = new RegExp('^([^。！？，,!?]{0,24}?)第\\s*([' + CN_NUM + ']+)\\s*([章节回])\\s*[:：、.．\\s]*(.*)$');
+const VOL_RE = new RegExp('^第\\s*([' + CN_NUM + ']+)\\s*([卷部集篇])\\s*[:：、.．\\s]*(.*)$');
+const UNIT = {章:'Chương',节:'Tiết',回:'Hồi',卷:'Quyển',部:'Phần',集:'Tập',篇:'Thiên'};
+const cvPart = s => { s = s.trim(); return s && hasHan(s) ? convertPlain(s) : s; };
 function chapterTitle(zhTitle, idx){
-  const z = (zhTitle || '').trim();
+  const z = String(zhTitle || '').trim();
   if (!z) return 'Chương ' + (idx + 1);
-  const m = z.normalize('NFKC').match(CH_RE);
+  const n = z.normalize('NFKC');
+  let m = n.match(CH_RE);
   if (m){
-    const unit = {章:'Chương',节:'Tiết',回:'Hồi',卷:'Quyển',集:'Tập'}[m[2]];
-    const rest = m[3] ? (hasHan(m[3]) ? convertPlain(m[3]) : m[3]) : '';
-    return unit + ' ' + cnToNum(m[1]) + (rest ? ': ' + rest : '');
+    const pre = m[1].trim(), rest = cvPart(m[4]);
+    let head = '';
+    if (pre && !/^正文卷?$/.test(pre)){
+      const v = pre.match(VOL_RE);
+      head = v ? UNIT[v[2]] + ' ' + cnToNum(v[1]) + (v[3].trim() ? ': ' + cvPart(v[3]) : '') : cvPart(pre);
+    }
+    return (head ? head + ' · ' : '') + UNIT[m[3]] + ' ' + cnToNum(m[2]) + (rest ? ': ' + rest : '');
   }
+  m = n.match(VOL_RE);
+  if (m){ const rest = cvPart(m[3]); return UNIT[m[2]] + ' ' + cnToNum(m[1]) + (rest ? ': ' + rest : ''); }
   return hasHan(z) ? convertPlain(z) : z;
+}
+// Tiêu đề chương đã convert, nhớ theo từng truyện; D.ver đổi (name, từ điển) thì làm lại
+const TT = { id:null, ver:-1, list:[] };
+function tocTitle(b, i){
+  const z = (b.titles && b.titles[i]) || '';
+  if (!D.loaded) return String(z || 'Chương ' + (i + 1));
+  if (TT.id !== b.id || TT.ver !== D.ver){ TT.id = b.id; TT.ver = D.ver; TT.list = []; }
+  let t = TT.list[i];
+  if (t == null) t = TT.list[i] = chapterTitle(z, i);
+  return t;
 }
 function bookTitle(b){
   if (!b) return '';
-  if (b.viTitle) return b.viTitle;
-  if (hasHan(b.zhTitle)) return titleCase(convertPlain(b.zhTitle).replace(/[«»]/g, ''));
-  return b.zhTitle || 'Truyện chưa đặt tên';
+  if (b.viTitle) return String(b.viTitle);
+  if (D.loaded && hasHan(b.zhTitle)) return titleCase(convertPlain(b.zhTitle).replace(/[«»]/g, ''));
+  return String(b.zhTitle || 'Truyện chưa đặt tên');
 }
-const authorName = b => b.author ? (hasHan(b.author) ? titleCase(hanViet(b.author)) : b.author) : '';
+const authorName = b => b.author ? (D.loaded && hasHan(b.author) ? titleCase(hanViet(b.author)) : String(b.author)) : '';
 const splitParas = zh => (zh || '').split(/\n+/).map(s => s.replace(/^[\s　]+|[\s　]+$/g, '')).filter(Boolean);
 
 /* ================= app state ================= */
-const S = { view:'lib', book:null, pre:null, preState:'', preDoc:null, idx:0, chap:null, paras:[], trans:null, transSet:new Set(), mode:'cv', streaming:null };
+const S = { view:'lib', book:null, pre:null, preState:'', preDoc:null, idx:0, chap:null, paras:[], trans:null, tpart:null, transSet:new Set(), partSet:new Set(), mode:'cv', streaming:null, wantY:null, booting:true };
 const DEF = { bg:null, fg:null, shadow:false, fs:19, lh:1.7, font:'Literata', align:'left', indent:0, tier:'default' };
 let ST = Object.assign({}, DEF, LS.get('tc-settings', {}));
 const FONTS = {
@@ -742,15 +925,17 @@ function applySettings(){
 
 /* ================= small UI helpers ================= */
 let toastT = 0;
-function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3200); }
+function toast(msg, ms){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, ms || 3200); }
+const onClose = {};   // id modal → hàm chạy khi modal đóng (bấm ×, Hủy, nền tối, Esc)
 function openModal(id){ $('#' + id).hidden = false; closePopup(); }
-function closeModal(id){ $('#' + id).hidden = true; }
+function closeModal(id){ const m = $('#' + id); if (m.hidden) return; m.hidden = true; const f = onClose[id]; if (f) f(); }
 const anyModal = () => $$('.modal').find(m => !m.hidden);
 let dl = null;
-async function saveFile(filename, text){
+async function saveFile(filename, data){
+  const blob = data instanceof Blob ? data : new Blob([data], { type:'text/plain' });
   if (!dl && WEB){
     try{
-      const url = URL.createObjectURL(new Blob([text], { type:'application/octet-stream' }));
+      const url = URL.createObjectURL(blob.type === 'application/octet-stream' ? blob : new Blob([blob], { type:'application/octet-stream' }));
       const a = document.createElement('a');
       a.href = url; a.download = filename; a.hidden = true;
       document.body.appendChild(a); a.click(); a.remove();
@@ -760,20 +945,57 @@ async function saveFile(filename, text){
     return;
   }
   if (!dl){ toast('Chế độ xem này không cho tải file. Hãy mở trang trên claude.ai.'); return; }
-  try{ await dl.save({ filename, data:new Blob([text], { type:'text/plain' }) }); toast('Đã lưu file ' + filename); }
+  try{ await dl.save({ filename, data:blob }); toast('Đã lưu file ' + filename); }
   catch(e){ if (e && e.code !== 'declined') toast('Không lưu được file (' + (e.code || 'lỗi') + ').'); }
 }
-async function readFileText(file, enc){
-  const buf = await file.arrayBuffer();
-  const u8 = new Uint8Array(buf);
-  if (enc === 'auto'){
-    if (u8[0] === 0xFF && u8[1] === 0xFE) return new TextDecoder('utf-16le').decode(buf);
-    if (u8[0] === 0xFE && u8[1] === 0xFF) return new TextDecoder('utf-16be').decode(buf);
-    try{ return new TextDecoder('utf-8', { fatal:true }).decode(buf); }
-    catch(e){ try{ return new TextDecoder('gb18030').decode(buf); }catch(e2){ return new TextDecoder('utf-8').decode(buf); } }
+const ENC_NAME = { 'utf-8':'UTF-8', 'gb18030':'GB18030', 'big5':'Big5', 'utf-16le':'UTF-16', 'utf-16be':'UTF-16' };
+function decodeAs(enc, buf){ try{ return new TextDecoder(enc).decode(buf); }catch(e){ return null; } }
+// Điểm "giống chữ Trung thật": số cặp 2 chữ mở đầu một cụm Vietphrase, cộng chữ có trong Hán Việt, trừ ký tự lỗi
+function encScore(s){
+  let vp = 0, hv = 0, bad = 0;
+  for (let i = 0; i < s.length; i++){
+    const c = s.charCodeAt(i);
+    if (c === 0xFFFD){ bad++; continue; }
+    if (c < 0x3400 || c > 0x9FFF) continue;
+    if (D.hv.has(s[i])) hv++;
+    if (D.vp2.has(s.substr(i, 2))) vp++;
   }
-  return new TextDecoder(enc).decode(buf);
+  return vp * 4 + hv - bad * 8;
 }
+// Giải mã file lớn theo từng khối 1MB rồi nhường luồng (file 20–40MB không làm trang đứng)
+async function decodeBig(enc, u8, fatal){
+  const dec = new TextDecoder(enc, fatal ? { fatal:true } : undefined);
+  const STEP = 1048576;
+  if (u8.length <= 2 * STEP) return dec.decode(u8);
+  const parts = [];
+  for (let i = 0; i < u8.length; i += STEP){
+    parts.push(dec.decode(u8.subarray(i, i + STEP), { stream:true }));
+    await tick();
+  }
+  parts.push(dec.decode());
+  return parts.join('');
+}
+// Đọc file chữ. enc = 'auto': UTF-8 nếu hợp lệ, không thì thử cả GB18030 lẫn Big5 và chọn bên ra nhiều chữ có trong từ điển hơn.
+async function readFileDetect(file, enc){
+  const u8 = new Uint8Array(await file.arrayBuffer());
+  if (enc !== 'auto') return { text:await decodeBig(enc, u8), enc };
+  if (u8[0] === 0xFF && u8[1] === 0xFE) return { text:await decodeBig('utf-16le', u8), enc:'utf-16le' };
+  if (u8[0] === 0xFE && u8[1] === 0xFF) return { text:await decodeBig('utf-16be', u8), enc:'utf-16be' };
+  try{ return { text:await decodeBig('utf-8', u8, true), enc:'utf-8' }; }catch(e){}
+  await dictReady();
+  let end = Math.min(u8.length, 200000);
+  if (end < u8.length){ const nl = u8.lastIndexOf(10, end); if (nl > 1000) end = nl; }
+  let best = null;
+  for (const c of ['gb18030', 'big5']){
+    const s = decodeAs(c, u8.subarray(0, end));
+    if (s == null) continue;
+    const sc = encScore(s);
+    if (!best || sc > best.sc) best = { c, sc };
+  }
+  if (!best) return { text:await decodeBig('utf-8', u8), enc:'utf-8', weak:true };
+  return { text:await decodeBig(best.c, u8), enc:best.c, guessed:true, weak:best.sc <= 0 };
+}
+async function readFileText(file, enc){ return (await readFileDetect(file, enc)).text; }
 function show(view){
   S.view = view;
   $('#viewLib').hidden = view !== 'lib';
@@ -785,7 +1007,8 @@ function show(view){
   $('#viewRead').classList.toggle('pre', !!S.pre);
   $('#pfName').hidden = !!S.pre;
   closePopup();
-  LS.set('tc-last', { view, book:S.book ? S.book.id : null, pre:S.pre ? S.pre.id : null });
+  // Lúc đang mở trang thì chưa ghi: tab khác mở cùng lúc vẫn đọc được trang đang xem dở
+  if (!S.booting) LS.set('tc-last', { view, book:S.book ? S.book.id : null, pre:S.pre ? S.pre.id : null });
 }
 
 /* ================= library ================= */
@@ -797,18 +1020,26 @@ async function renderLib(){
   $('#libEmpty').hidden = books.length > 0;
   drawPreLib(books.length);
   $('#books').innerHTML = books.map(b => {
-    const read = b.lastRead != null ? 'Đang đọc chương ' + (b.lastRead + 1) : 'Chưa đọc';
+    // Số đọc từ dữ liệu cũng phải ép kiểu: file sao lưu có thể bị sửa tay
+    const read = isNat(b.lastRead) ? 'Đang đọc chương ' + (b.lastRead + 1) : 'Chưa đọc';
     const au = authorName(b);
     return '<div class="book" data-id="' + esc(b.id) + '"><div style="min-width:0"><h2>' + esc(bookTitle(b)) + '</h2>' +
-      '<div class="meta">' + (b.zhTitle && hasHan(b.zhTitle) ? esc(b.zhTitle) + ' · ' : '') + (au ? esc(au) + ' · ' : '') + b.count + ' chương · ' + read + '</div></div>' +
+      '<div class="meta">' + (b.zhTitle && hasHan(b.zhTitle) ? esc(b.zhTitle) + ' · ' : '') + (au ? esc(au) + ' · ' : '') + esc(isNat(b.count) ? b.count : 0) + ' chương · ' + esc(read) + '</div></div>' +
       '<div class="acts"><button class="btn primary" data-act="read">Đọc tiếp</button><button class="btn" data-act="toc">Mục lục</button><button class="btn danger" data-act="del">Xóa</button></div></div>';
   }).join('');
   updateDictStat();
 }
+const pct = f => Math.min(100, Math.max(0, Math.round(f * 100))) + '%';
 function updateDictStat(){
   const f = n => n.toLocaleString('vi-VN');
-  $('#dictStat').textContent = !D.loaded ? 'Đang nạp từ điển…' :
+  $('#dictStat').textContent = !D.loaded ? 'Đang nạp từ điển… ' + pct(D.prog) :
     'Từ điển: Vietphrase ' + f(D.vp.size) + ' cụm · Hán Việt ' + f(D.hv.size) + ' chữ · Kho name ' + f(D.kho.size) + ' tên' + (D.uVp || D.uHv ? ' (có file bạn tải lên)' : '');
+}
+// Tiến độ nạp từ điển lúc mở trang: hiện ở đầu tủ truyện và trong khung đọc
+function bootProg(f){
+  D.prog = f;
+  updateDictStat();
+  const w = $('#rText .dictwait'); if (w) w.textContent = 'Đang nạp từ điển… ' + pct(f);
 }
 $('#books').addEventListener('click', async e => {
   const btn = e.target.closest('button[data-act]'); if (!btn) return;
@@ -820,19 +1051,55 @@ $('#books').addEventListener('click', async e => {
     acts.innerHTML = '<span class="small">Xóa truyện này cùng bản dịch?</span><button class="btn danger" data-act="del2">Xóa</button><button class="btn" data-act="cancel">Hủy</button>';
   } else if (act === 'cancel') renderLib();
   else if (act === 'del2'){
-    await DB.delPrefix('chapters', id + ':'); await DB.delPrefix('trans', id + ':'); await DB.del('books', id);
-    toast('Đã xóa truyện'); renderLib();
+    // Truyện đang được Claude dịch: dừng việc dịch; bản dịch chỉ được ghi khi truyện còn (DB.putIf)
+    const stopJob = JOB.running && JOB.bookId === id;
+    if (stopJob){ JOB.dead = id; JOB.ctl.abort(); }
+    // Xóa bản ghi truyện trước, rồi mới xóa chương / bản dịch
+    await DB.del('books', id);
+    await DB.delPrefix('chapters', id + ':'); await DB.delPrefix('trans', id + ':'); await DB.delPrefix('kv', 'tp:' + id + ':');
+    bcast({ t:'del', id });
+    toast(stopJob ? 'Đã xóa truyện và dừng việc dịch truyện này.' : 'Đã xóa truyện'); renderLib();
   }
 });
 
 /* ---------- add book / append chapters ---------- */
 let addMode = 'new';
+// Dòng tiêu đề chương: 第…章 / 第…节 / 第…回, phía trước có thể có tên quyển ngắn (第一卷 风起 / 卷一 / 正文 / VIP卷 …).
+// Sau 节 / 回 phải là khoảng trắng, dấu câu hoặc hết dòng, để không nhận nhầm 第三回合… / 第二节课….
+const HEAD_RE = new RegExp('^[ \\t\\u3000]*((?:(?:正文|卷[' + CN_NUM + ']+|第[ \\t]*[' + CN_NUM + ']+[ \\t]*[卷部集篇])[^\\n。！？，,!?]{0,20}?[ \\t\\u3000]*|[^\\n。！？，,!?第]{1,20}?[ \\t\\u3000]+)?' +
+  '第[ \\t]*[' + CN_NUM + ']+[ \\t]*(?:章|[节回](?=$|[\\s\\p{P}\\p{S}]))[^\\n]{0,60})$', 'gmu');
+// Văn bản dài mà không có tiêu đề chương: chia thành các "Phần N" khoảng 8.000–10.000 chữ theo ranh giới đoạn
+function splitBySize(text){
+  const out = []; let cur = [], len = 0;
+  const flush = () => { const zh = cur.join('\n').trim(); if (zh) out.push({ zhTitle:'Phần ' + (out.length + 1), zh }); cur = []; len = 0; };
+  for (let p of text.split('\n')){
+    while (p.length > 10000){
+      let cut = -1;
+      for (const m of p.slice(8000, 10000).matchAll(/[。！？!?…」”]/g)) cut = 8000 + m.index + 1;
+      if (cut < 0) cut = 9000;
+      if (/[\uD800-\uDBFF]/.test(p[cut - 1])) cut++;
+      if (len) flush();
+      cur.push(p.slice(0, cut)); flush();
+      p = p.slice(cut);
+    }
+    if (len && len + p.length > 10000) flush();
+    cur.push(p); len += p.length + 1;
+    if (len >= 8000) flush();
+  }
+  flush();
+  return out;
+}
 function splitChapters(text){
   text = text.replace(/\r\n?/g, '\n');
-  const re = /^[ \t　]*(第[ \t]*[0-9０-９零〇一二两三四五六七八九十百千万]+[ \t]*[章节回][^\n]{0,60})$/gm;
   const heads = []; let m;
-  while ((m = re.exec(text))) heads.push({ i:m.index, end:m.index + m[0].length, title:m[1].trim() });
-  if (!heads.length){ const t = text.trim(); return t ? [{ zhTitle:'', zh:t }] : []; }
+  HEAD_RE.lastIndex = 0;
+  while ((m = HEAD_RE.exec(text))) heads.push({ i:m.index, end:m.index + m[0].length, title:m[1].trim() });
+  if (!heads.length){
+    const t = text.trim();
+    if (!t) return [];
+    if (t.length > 50000){ const out = splitBySize(t); out.auto = true; return out; }
+    return [{ zhTitle:'', zh:t }];
+  }
   const out = [];
   const pre = text.slice(0, heads[0].i).trim();
   if (pre && pre.length > 40) out.push({ zhTitle:'Mở đầu', zh:pre });
@@ -848,50 +1115,102 @@ function openAdd(mode){
   $('#aTitleF').hidden = $('#aAuthorF').hidden = mode !== 'new';
   $('#aOk').textContent = mode === 'new' ? 'Thêm vào tủ' : 'Thêm chương';
   ['#aTitle','#aAuthor','#aText'].forEach(s => $(s).value = '');
-  $('#aFile').value = ''; $('#aInfo').textContent = '';
+  $('#aFile').value = ''; $('#aInfo').textContent = ''; $('#aInfo').classList.remove('warn');
+  addCache = null;
   openModal('mAdd');
 }
-async function gatherAdd(){
-  const enc = $('#aEnc').value, files = [...$('#aFile').files];
-  let chapters = [];
-  for (const f of files){
-    const txt = await readFileText(f, enc);
-    const chs = splitChapters(txt);
-    if (chs.length === 1 && !chs[0].zhTitle) chs[0].zhTitle = f.name.replace(/\.txt$/i, '');
-    chapters = chapters.concat(chs);
-  }
-  const pasted = $('#aText').value;
-  if (pasted.trim()) chapters = chapters.concat(splitChapters(pasted));
-  return chapters;
+// Kết quả đọc + chia chương được nhớ lại: bấm "Thêm" dùng luôn kết quả của bước xem trước nếu file / bảng mã / chữ dán không đổi
+let addCache = null, adding = false;
+function addKey(){ return { enc:$('#aEnc').value, files:[...$('#aFile').files], text:$('#aText').value }; }
+const sameFile = (a, b) => a === b || (a.name === b.name && a.size === b.size && a.lastModified === b.lastModified);
+const sameAddKey = (a, b) => a.enc === b.enc && a.text === b.text && a.files.length === b.files.length && a.files.every((f, i) => sameFile(f, b.files[i]));
+function gatherAdd(){
+  const key = addKey();
+  if (addCache && sameAddKey(addCache.key, key)) return addCache.p;
+  const p = (async () => {
+    let chapters = [], auto = 0;
+    const encs = new Set(); let weak = false;
+    for (const f of key.files){
+      const r = await readFileDetect(f, key.enc);
+      if (key.enc === 'auto') encs.add(r.enc);
+      if (r.weak) weak = true;
+      const chs = splitChapters(r.text);
+      if (chs.auto) auto += chs.length;
+      if (chs.length === 1 && !chs[0].zhTitle) chs[0].zhTitle = f.name.replace(/\.txt$/i, '');
+      chapters = chapters.concat(chs);
+    }
+    if (key.text.trim()){ const chs = splitChapters(key.text); if (chs.auto) auto += chs.length; chapters = chapters.concat(chs); }
+    return { chs:chapters, auto, encs:[...encs], weak };
+  })();
+  addCache = { key, p };
+  p.catch(() => { if (addCache && addCache.p === p) addCache = null; });
+  return p;
+}
+onClose.mAdd = () => { if (!adding) addCache = null; };
+function addInfoText(r){
+  const chs = r.chs;
+  if (!chs.length) return '';
+  const noHan = !chs.some(c => hasHan(c.zh));
+  let s = 'Tìm thấy ' + chs.length + ' chương' + (chs.length > 1 ? ', từ "' + chs[0].zhTitle + '" đến "' + chs[chs.length - 1].zhTitle + '"' : '') + '.';
+  if (r.encs.length && !(r.encs.length === 1 && r.encs[0] === 'utf-8')) s += ' Bảng mã nhận được: ' + r.encs.map(e => ENC_NAME[e] || e).join(', ') + '.';
+  if (r.auto) s += ' Không thấy dòng tiêu đề chương (第…章) nên đã tự chia thành ' + r.auto + ' phần, mỗi phần khoảng 9.000 chữ.';
+  if (noHan) s += ' Không thấy chữ Trung: có thể sai bảng mã, hãy chọn thử bảng mã khác (GB18030 hoặc Big5).';
+  else if (r.weak) s += ' Chữ có vẻ bị lỗi bảng mã, hãy chọn thử bảng mã khác.';
+  return s;
 }
 async function previewAdd(){
-  const chs = await gatherAdd();
-  const bad = chs.length && !chs.some(c => hasHan(c.zh));
-  $('#aInfo').textContent = chs.length ? 'Tìm thấy ' + chs.length + ' chương' + (chs.length > 1 ? ', từ "' + chs[0].zhTitle + '" đến "' + chs[chs.length - 1].zhTitle + '"' : '') + '.' + (bad ? ' Không thấy chữ Trung: có thể sai bảng mã, hãy chọn GB18030.' : '') : '';
+  const p = gatherAdd();
+  const info = $('#aInfo');
+  try{
+    const r = await p;
+    if (addCache && addCache.p === p){
+      info.textContent = addInfoText(r);
+      info.classList.toggle('warn', !!r.chs.length && (r.weak || !r.chs.some(c => hasHan(c.zh))));
+    }
+  }catch(e){ info.textContent = 'Không đọc được file. Hãy thử chọn lại hoặc đổi bảng mã.'; info.classList.add('warn'); }
 }
 $('#aFile').addEventListener('change', previewAdd);
 $('#aEnc').addEventListener('change', previewAdd);
 $('#aText').addEventListener('input', () => { clearTimeout(previewAdd.t); previewAdd.t = setTimeout(previewAdd, 400); });
 $('#aOk').addEventListener('click', async () => {
-  const chs = await gatherAdd();
-  if (!chs.length){ $('#aInfo').textContent = 'Chưa có nội dung. Hãy chọn file .txt hoặc dán chữ Trung.'; return; }
-  if (addMode === 'new'){
-    const files = [...$('#aFile').files];
-    const id = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    let zhTitle = $('#aTitle').value.trim() || (files[0] ? files[0].name.replace(/\.txt$/i, '') : '') || 'Truyện mới';
-    const b = { id, zhTitle, viTitle:'', author:$('#aAuthor').value.trim(), notes:'', names:{}, titles:chs.map(c => c.zhTitle), count:chs.length, lastRead:null, createdAt:Date.now(), updatedAt:Date.now() };
-    await DB.putMany('chapters', chs.map((c, i) => [ck(id, i), c]));
-    await DB.put('books', id, b);
-    closeModal('mAdd'); toast('Đã thêm ' + chs.length + ' chương');
-    openToc(id);
-  } else {
-    const b = S.book, start = b.count;
-    await DB.putMany('chapters', chs.map((c, i) => [ck(b.id, start + i), c]));
-    b.titles = (b.titles || []).concat(chs.map(c => c.zhTitle));
-    b.count += chs.length; b.updatedAt = Date.now();
-    await DB.put('books', b.id, b);
-    closeModal('mAdd'); toast('Đã thêm ' + chs.length + ' chương');
-    openToc(b.id);
+  if (adding) return;
+  const btn = $('#aOk'), label = btn.textContent;
+  adding = true; btn.disabled = true; btn.textContent = 'Đang thêm…';
+  try{
+    const r = await gatherAdd(), chs = r.chs;
+    if (!chs.length){ $('#aInfo').textContent = 'Chưa có nội dung. Hãy chọn file .txt hoặc dán chữ Trung.'; return; }
+    if (addMode === 'new'){
+      const files = [...$('#aFile').files];
+      const id = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      let zhTitle = $('#aTitle').value.trim() || (files[0] ? files[0].name.replace(/\.txt$/i, '') : '') || 'Truyện mới';
+      const b = { id, zhTitle, viTitle:'', author:$('#aAuthor').value.trim(), notes:'', names:{}, titles:chs.map(c => c.zhTitle), count:chs.length, lastRead:null, createdAt:Date.now(), updatedAt:Date.now() };
+      await DB.putMany('chapters', chs.map((c, i) => [ck(id, i), c]));
+      await DB.put('books', id, b);
+      addCache = null; closeModal('mAdd'); toast('Đã thêm ' + chs.length + ' chương');
+      bcast({ t:'lib' });
+      openToc(id);
+    } else {
+      const id = S.book.id;
+      const cur = await DB.get('books', id);
+      if (!cur){ $('#aInfo').textContent = 'Truyện này không còn trong tủ.'; return; }
+      const start = isNat(cur.count) ? cur.count : 0;
+      await DB.putMany('chapters', chs.map((c, i) => [ck(id, start + i), c]));
+      const nb = await DB.update('books', id, x => {
+        if (!x) return;
+        x.titles = (Array.isArray(x.titles) ? x.titles.slice(0, start) : []).concat(chs.map(c => c.zhTitle));
+        x.count = start + chs.length; x.updatedAt = Date.now();
+        return x;
+      });
+      if (nb && S.book && S.book.id === id){ S.book.titles = nb.titles; S.book.count = nb.count; S.book.updatedAt = nb.updatedAt; }
+      addCache = null; closeModal('mAdd'); toast('Đã thêm ' + chs.length + ' chương');
+      bcast({ t:'book', id });
+      openToc(id);
+    }
+  }catch(e){
+    $('#aInfo').textContent = 'Không thêm được truyện' + (e && e.name === 'QuotaExceededError' ? ': máy hết dung lượng lưu.' : '. Hãy thử lại.');
+    $('#aInfo').classList.add('warn');
+  }finally{
+    adding = false; btn.disabled = false; btn.textContent = label;
   }
 });
 const SAMPLE = '第一回 宴桃园豪杰三结义 斩黄巾英雄首立功\n话说天下大势，分久必合，合久必分。周末七国分争，并入于秦。及秦灭之后，楚、汉分争，又并入于汉。汉朝自高祖斩白蛇而起义，一统天下，后来光武中兴，传至献帝，遂分为三国。\n推其致乱之由，殆始于桓、灵二帝。桓帝禁锢善类，崇信宦官。及桓帝崩，灵帝即位，大将军窦武、太傅陈蕃共相辅佐。时有宦官曹节等弄权，窦武、陈蕃谋诛之，机事不密，反为所害，中涓自此愈横。';
@@ -907,40 +1226,58 @@ $('#bSample').addEventListener('click', async e => {
 });
 
 /* ================= book / toc ================= */
+// Làm sạch bản ghi truyện đọc từ IndexedDB (dữ liệu cũ hoặc bị sửa tay) trước khi dùng
+function fixBook(b){
+  b.names = cleanNames(b.names);
+  if (!isNat(b.count)) b.count = 0;
+  if (b.lastRead != null && !(isNat(b.lastRead) && b.lastRead < b.count)) b.lastRead = isNat(b.lastRead) && b.count ? b.count - 1 : null;
+  if (!Array.isArray(b.titles)) b.titles = null;
+  return b;
+}
 async function loadBook(id){
   const b = await DB.get('books', id);
   if (!b) return null;
-  b.names = b.names || {};
+  fixBook(b);
   S.book = b; S.pre = null; S.preState = ''; S.preDoc = null;
   D.book = new Map(Object.entries(b.names));
-  recalcNameMax();
-  const keys = await DB.keys('trans', id + ':');
-  S.transSet = new Set(keys.map(k => +k.slice(id.length + 1)));
+  rebuildNameIdx();
+  // Đệm tiêu đề mục lục chỉ cần làm lại khi đổi truyện hoặc name của truyện đã khác
+  const sig = id + '|' + JSON.stringify(b.names);
+  if (sig !== S.bookSig){ S.bookSig = sig; D.ver++; }
+  const [keys, pks] = await Promise.all([DB.keys('trans', id + ':'), DB.keys('kv', 'tp:' + id + ':')]);
+  S.transSet = new Set(keys.map(k => +k.slice(id.length + 1)).filter(isNat));
+  S.partSet = new Set(pks.map(k => +k.slice(id.length + 4)).filter(isNat));
   return b;
 }
 async function openToc(id){
   const b = (S.book && S.book.id === id) ? S.book : await loadBook(id);
   if (!b){ renderLib(); return; }
   show('toc');
-  $('#tTitle').textContent = bookTitle(b);
-  const au = authorName(b);
-  $('#tMeta').textContent = [hasHan(b.zhTitle) ? b.zhTitle : '', au, b.count + ' chương', (S.transSet.size || !WEB) ? 'Claude đã dịch ' + S.transSet.size + ' chương' : ''].filter(Boolean).join(' · ');
-  $('#tTo').max = $('#tFrom').max = b.count;
+  if (!b.titles || b.titles.length !== b.count){
+    // Dữ liệu cũ chưa có danh sách tiêu đề: đọc từng mẻ chương, chỉ giữ tiêu đề
+    const titles = new Array(b.count).fill('');
+    await DB.scan('chapters', b.id + ':', (k, c) => { const i = +k.slice(b.id.length + 1); if (i < b.count) titles[i] = (c && isStr(c.zhTitle) && c.zhTitle) || ''; });
+    b.titles = titles;
+    DB.update('books', b.id, x => { if (!x) return; x.titles = titles; return x; }).catch(() => {});
+  }
   if (!JOB.running){
     const start = (b.lastRead ?? 0) + 1;
     $('#tFrom').value = Math.min(start, b.count);
     $('#tTo').value = Math.min(start + 9, b.count);
   }
-  const list = $('#tocList');
-  if (!b.titles || b.titles.length !== b.count){
-    const chs = await Promise.all(Array.from({ length:b.count }, (_, i) => DB.get('chapters', ck(b.id, i))));
-    b.titles = chs.map(c => (c && c.zhTitle) || '');
-    DB.put('books', b.id, b).catch(() => {});
-  }
-  list.innerHTML = b.titles.map((t, i) => '<li' + (i === b.lastRead ? ' class="cur"' : '') + '><button data-i="' + i + '"><span class="n">' + (i + 1) + '</span><span class="t">' + esc(chapterTitle(t, i)) + '</span>' + (S.transSet.has(i) ? '<span class="cl">Claude</span>' : '') + '</button></li>').join('');
-  updateClaudeUI();
-  const cur = list.querySelector('li.cur'); if (cur) cur.scrollIntoView({ block:'center' });
+  drawToc();
+  const cur = $('#tocList li.cur'); if (cur) cur.scrollIntoView({ block:'center' });
   else window.scrollTo(0, 0);
+}
+function drawToc(){
+  const b = S.book; if (!b || S.pre || S.view !== 'toc' || !b.titles) return;
+  $('#tTitle').textContent = bookTitle(b);
+  const au = authorName(b);
+  $('#tMeta').textContent = [hasHan(b.zhTitle) ? b.zhTitle : '', au, b.count + ' chương', (S.transSet.size || !WEB) ? 'Claude đã dịch ' + S.transSet.size + ' chương' : ''].filter(Boolean).join(' · ');
+  $('#tTo').max = $('#tFrom').max = b.count;
+  $('#tocList').innerHTML = b.titles.map((t, i) => '<li' + (i === b.lastRead ? ' class="cur"' : '') + '><button data-i="' + i + '"><span class="n">' + (i + 1) + '</span><span class="t">' + esc(tocTitle(b, i)) + '</span>' +
+    (S.transSet.has(i) ? '<span class="cl">Claude</span>' : S.partSet.has(i) ? '<span class="cl">Dịch dở</span>' : '') + '</button></li>').join('');
+  updateClaudeUI();
 }
 $('#tocList').addEventListener('click', e => {
   const b = e.target.closest('button[data-i]'); if (!b) return;
@@ -959,11 +1296,13 @@ $('#tInfo').addEventListener('click', () => {
 });
 $('#iOk').addEventListener('click', async () => {
   const b = S.book;
-  b.viTitle = $('#iVi').value.trim(); b.author = $('#iAuthor').value.trim(); b.notes = $('#iNotes').value.trim();
-  b.updatedAt = Date.now();
-  await DB.put('books', b.id, b);
+  const patch = { viTitle:$('#iVi').value.trim(), author:$('#iAuthor').value.trim(), notes:$('#iNotes').value.trim(), updatedAt:Date.now() };
+  Object.assign(b, patch);
+  try{ await DB.update('books', b.id, x => x ? Object.assign(x, patch) : undefined); }
+  catch(e){ toast('Không lưu được thông tin truyện.'); return; }
+  bcast({ t:'book', id:b.id });
   closeModal('mInfo'); toast('Đã lưu thông tin truyện');
-  if (S.view === 'toc') openToc(b.id); else renderChapter();
+  if (S.view === 'toc') drawToc(); else renderChapter();
 });
 
 /* ================= reader ================= */
@@ -977,43 +1316,61 @@ async function openBook(id, idx){
 async function loadChapter(idx, restoreScroll){
   const b = S.book;
   S.idx = idx;
-  S.chap = await DB.get('chapters', ck(b.id, idx)) || { zhTitle:'', zh:'' };
+  const [chap, tr, tp] = await Promise.all([DB.get('chapters', ck(b.id, idx)), DB.get('trans', ck(b.id, idx)), DB.get('kv', tpk(b.id, idx))]);
+  S.chap = chap && isStr(chap.zh) ? chap : { zhTitle:'', zh:'' };
   S.paras = splitParas(S.chap.zh);
-  S.trans = await DB.get('trans', ck(b.id, idx)) || null;
-  S.mode = (LS.get('tc-mode', 'cv') === 'cl' && S.trans) ? 'cl' : 'cv';
+  S.trans = okTrans(tr) ? tr : null;
+  S.tpart = okTrans(tp) && tp.partial ? tp : null;
+  S.mode = (LS.get('tc-mode', 'cv') === 'cl' && (S.trans || S.tpart)) ? 'cl' : 'cv';
   if (jobHere()) S.mode = 'cl';
   if (!JOB.running) setNote('');
+  const sc = LS.get('tc-scroll', {})[b.id];
+  const y = restoreScroll && sc && sc.idx === idx ? sc.y : 0;
+  // Từ điển chưa nạp xong thì bản convert chỉ là chữ chờ: nhớ chỗ cuộn để cuộn lại khi vẽ xong
+  S.wantY = !D.loaded && S.mode === 'cv' && y ? y : null;
   renderChapter();
   b.lastRead = idx; b.updatedAt = Date.now();
-  DB.put('books', b.id, b).catch(() => {});
+  // Chỉ ghi phần thay đổi lên bản mới nhất trong IndexedDB (tab khác có thể vừa lưu name)
+  DB.update('books', b.id, x => { if (!x) return; x.lastRead = idx; x.updatedAt = b.updatedAt; return x; }).catch(() => {});
   LS.set('tc-last', { view:'read', book:b.id });
-  const sc = LS.get('tc-scroll', {})[b.id];
-  window.scrollTo(0, restoreScroll && sc && sc.idx === idx ? sc.y : 0);
+  window.scrollTo(0, y);
+}
+const okTrans = t => isObj(t) && isStr(t.text);
+const fmtAt = at => { const d = new Date(isNum(at) ? at : 0); return isNaN(d) ? '' : d.toLocaleString('vi-VN', { hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit', year:'numeric' }); };
+const partTxt = t => t && t.partial ? 'phần ' + t.partial.part + '/' + t.partial.parts : '';
+const cvPara = (p, i) => '<p data-p="' + i + '">' + render(tokenize(p), true) + '</p>';
+function drawHead(){
+  const b = S.book;
+  $('#rTitle').textContent = bookTitle(b);
+  const t = S.trans || S.tpart;
+  $('#rSub').textContent = (S.mode === 'cl' && t && t.title) ? t.title : chapterTitle(S.chap.zhTitle, S.idx);
 }
 function renderChapter(){
   if (S.pre){ renderPre(); return; }
   const b = S.book; if (!b || S.view !== 'read') return;
   closePopup();
-  $('#rTitle').textContent = bookTitle(b);
-  const cvTitle = chapterTitle(S.chap.zhTitle, S.idx);
-  $('#rSub').textContent = (S.mode === 'cl' && S.trans && S.trans.title) ? S.trans.title : cvTitle;
+  drawHead();
   $('#rPos').textContent = (S.idx + 1) + ' / ' + b.count;
   $$('[data-nav="prev"]').forEach(x => x.disabled = S.idx <= 0);
   $$('[data-nav="next"]').forEach(x => x.disabled = S.idx >= b.count - 1);
-  $('.seg').hidden = WEB && S.transSet.size === 0;
+  $('.seg').hidden = WEB && S.transSet.size === 0 && S.partSet.size === 0;
   $('#mCv').setAttribute('aria-pressed', String(S.mode === 'cv'));
   $('#mCl').setAttribute('aria-pressed', String(S.mode === 'cl'));
   const box = $('#rText');
   const sn = $('#savedNote'); sn.hidden = true;
-  if (S.mode === 'cv'){
-    box.innerHTML = S.paras.length ? S.paras.map((p, i) => '<p data-p="' + i + '">' + render(tokenize(p), true) + '</p>').join('') : '<p class="muted">Chương này trống.</p>';
+  if (S.mode === 'cv' && !D.loaded){
+    box.innerHTML = '<p class="muted dictwait">Đang nạp từ điển… ' + esc(pct(D.prog)) + '</p>';
+  } else if (S.mode === 'cv'){
+    box.innerHTML = S.paras.length ? S.paras.map(cvPara).join('') : '<p class="muted">Chương này trống.</p>';
   } else if (jobHere() && S.streaming != null){
     drawStream(S.streaming);
-  } else if (S.trans){
-    box.innerHTML = S.trans.text.split('\n').filter(Boolean).map(p => '<p>' + esc(p) + '</p>').join('');
+  } else if (S.trans || S.tpart){
+    const t = S.trans || S.tpart;
+    box.innerHTML = t.text.split('\n').filter(Boolean).map(p => '<p>' + esc(p) + '</p>').join('');
     sn.hidden = false;
-    const dt = new Date(S.trans.at);
-    sn.textContent = 'Bản Claude dịch · ' + dt.toLocaleString('vi-VN', { hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit', year:'numeric' }) + (S.trans.truncated ? ' · Có đoạn bị cắt ngắn, bấm Dịch lại nếu thiếu.' : '');
+    let note = 'Bản Claude dịch · ' + fmtAt(t.at) + (t.truncated ? ' · Có đoạn bị cắt ngắn, bấm Dịch lại nếu thiếu.' : '');
+    if (S.tpart) note += S.trans ? ' · Bản dịch lại đang dở (xong ' + partTxt(S.tpart) + '), bấm Dịch tiếp để dịch nốt.' : ' · Bản dịch dở: mới xong ' + partTxt(S.tpart) + '.' + (WEB ? '' : ' Bấm Dịch tiếp để dịch nốt.');
+    sn.innerHTML = esc(note) + (S.tpart && !WEB ? ' <button class="linkbtn small" data-claude-redo>Dịch lại từ đầu</button>' : '');
   } else if (WEB){
     box.innerHTML = '<div class="placeholder"><b>Chương này chưa có bản Claude dịch.</b><span>Bản web không có nút Claude dịch. Hãy dịch chương ở bản trên claude.ai, bấm Sao lưu ở đó, rồi bấm Khôi phục ở đây.</span></div>';
   } else {
@@ -1022,6 +1379,20 @@ function renderChapter(){
   updateClaudeUI();
 }
 function rerenderKeep(){ const y = window.scrollY; renderChapter(); window.scrollTo(0, y); }
+// Name đổi: chỉ dựng lại các đoạn có chứa chữ của name đó (đoạn khác không thể đổi), giữ nguyên chỗ cuộn
+function rerenderNames(keys){
+  if (S.view !== 'read' || S.pre || !S.book) return;
+  if (!keys || keys.length > 300 || S.mode !== 'cv' || !D.loaded){ rerenderKeep(); return; }
+  closePopup();
+  drawHead();
+  if (!keys.length) return;
+  const box = $('#rText');
+  S.paras.forEach((p, i) => {
+    if (!keys.some(k => p.includes(k))) return;
+    const el = box.querySelector('p[data-p="' + i + '"]');
+    if (el) el.innerHTML = render(tokenize(p), true);
+  });
+}
 function go(delta){
   const n = S.idx + delta;
   if (S.pre){ if (n >= 0 && n < S.pre.chuong.length) loadPreChapter(n, false); return; }
@@ -1034,8 +1405,9 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-pre-retry]')){ if (S.pre) loadPreChapter(S.idx, false); return; }
   const g = e.target.closest('[data-go="lib"]'); if (g){ renderLib(); return; }
   if (e.target.closest('[data-claude]')) translateCurrent();
+  else if (e.target.closest('[data-claude-redo]')) translateCurrent(true);
 });
-$('#mCv').addEventListener('click', () => { S.mode = 'cv'; LS.set('tc-mode', 'cv'); renderChapter(); });
+$('#mCv').addEventListener('click', () => { S.mode = 'cv'; LS.set('tc-mode', 'cv'); S.wantY = null; renderChapter(); });
 $('#mCl').addEventListener('click', () => { S.mode = 'cl'; LS.set('tc-mode', 'cl'); renderChapter(); });
 let scT = 0;
 window.addEventListener('scroll', () => {
@@ -1178,7 +1550,7 @@ function fillPopup(){
   $('#pBd').href = 'https://www.baidu.com/s?wd=' + encodeURIComponent(z);
   const para = S.paras[P.p] || '';
   $('#pExtL').disabled = P.s <= 0; $('#pExtR').disabled = P.e >= para.length;
-  $('#pShrL').disabled = $('#pShrR').disabled = P.e - P.s <= 1;
+  $('#pShrL').disabled = $('#pShrR').disabled = [...z].length <= 1;
   $$('#rText .w.sel').forEach(x => x.classList.remove('sel'));
   const pe = $('#rText p[data-p="' + P.p + '"]');
   if (pe) $$('.w', pe).forEach(x => { if (+x.dataset.s < P.e && +x.dataset.e > P.s) x.classList.add('sel'); });
@@ -1204,11 +1576,22 @@ document.addEventListener('click', e => {
   if (!popup.hidden && !popup.contains(e.target) && !e.target.closest('.w')) closePopup();
   if (!$('#panel').hidden && !$('#panel').contains(e.target) && !$('#gear').contains(e.target)) { $('#panel').hidden = true; $('#gear').setAttribute('aria-expanded', 'false'); }
 });
-const adjust = (ds, de) => { const len = (S.paras[P.p] || '').length; const s = Math.max(0, P.s + ds), e = Math.min(len, P.e + de); if (e - s >= 1){ P.s = s; P.e = e; fillPopup(); placePopup(); } };
-$('#pExtL').addEventListener('click', () => adjust(-1, 0));
-$('#pExtR').addEventListener('click', () => adjust(0, 1));
-$('#pShrL').addEventListener('click', () => adjust(1, 0));
-$('#pShrR').addEventListener('click', () => adjust(0, -1));
+// Độ dài (1 hoặc 2 đơn vị UTF-16) của chữ đứng ngay trước / ngay sau vị trí i, để không cắt đôi chữ ngoài BMP như 𠮷
+const isHi = c => c >= '\uD800' && c <= '\uDBFF', isLo = c => c >= '\uDC00' && c <= '\uDFFF';
+const cpBefore = (s, i) => i >= 2 && isLo(s[i - 1]) && isHi(s[i - 2]) ? 2 : 1;
+const cpAfter = (s, i) => isHi(s[i] || '') && isLo(s[i + 1] || '') ? 2 : 1;
+function adjust(side, grow){
+  const para = S.paras[P.p] || '';
+  let s = P.s, e = P.e;
+  if (side === 'L') s = grow ? s - cpBefore(para, s) : s + cpAfter(para, s);
+  else e = grow ? e + cpAfter(para, e) : e - cpBefore(para, e);
+  s = Math.max(0, s); e = Math.min(para.length, e);
+  if (e > s){ P.s = s; P.e = e; fillPopup(); placePopup(); }
+}
+$('#pExtL').addEventListener('click', () => adjust('L', true));
+$('#pExtR').addEventListener('click', () => adjust('R', true));
+$('#pShrL').addEventListener('click', () => adjust('L', false));
+$('#pShrR').addEventListener('click', () => adjust('R', false));
 $('#pClose').addEventListener('click', closePopup);
 $('#pCopy').addEventListener('click', async () => {
   const z = $('#pZw').value;
@@ -1223,18 +1606,71 @@ $('#pEdit').addEventListener('click', () => openNameEditor(selZh()));
 $('#pAdd').addEventListener('click', () => openNameEditor(selZh()));
 $('#pMgr').addEventListener('click', () => openMgr('book'));
 
-async function persistBookNames(){ S.book.names = Object.fromEntries(D.book); S.book.updatedAt = Date.now(); await DB.put('books', S.book.id, S.book); }
-async function persistKho(){ await DB.put('kv', 'names:kho', Object.fromEntries(D.kho)); }
+/* ---------- lưu name: chỉ ghi phần thay đổi lên bản mới nhất trong IndexedDB ---------- */
+// ch = { set:{zh:vi}, del:[zh], clear:true }
+function applyNameDelta(o, ch){
+  const n = ch.clear ? {} : Object.assign({}, isObj(o) ? o : {});
+  (ch.del || []).forEach(k => { delete n[k]; });
+  Object.assign(n, ch.set || {});
+  return n;
+}
+async function writeBookNames(id, ch){
+  const now = Date.now();
+  await DB.update('books', id, x => { if (!x) return; x.names = applyNameDelta(x.names, ch); x.updatedAt = now; return x; });
+  bcast({ t:'book', id, keys:ch.clear ? null : Object.keys(ch.set || {}).concat(ch.del || []) });
+}
+// Kho chung: gom các lần sửa trong ~300ms rồi ghi một lần
+const KQ = { set:new Map(), del:new Set(), clear:false, t:0, p:null };
+function queueKho(ch){
+  if (ch.clear){ KQ.clear = true; KQ.set.clear(); KQ.del.clear(); }
+  (ch.del || []).forEach(k => { KQ.set.delete(k); KQ.del.add(k); });
+  Object.entries(ch.set || {}).forEach(([k, v]) => { KQ.del.delete(k); KQ.set.set(k, v); });
+  clearTimeout(KQ.t); KQ.t = setTimeout(flushKho, 300);
+}
+function applyKhoQueue(m){ if (KQ.clear) m.clear(); KQ.del.forEach(k => m.delete(k)); KQ.set.forEach((v, k) => m.set(k, v)); }
+async function flushKho(){
+  clearTimeout(KQ.t); KQ.t = 0;
+  if (KQ.p) await KQ.p.catch(() => {});
+  if (!KQ.clear && !KQ.set.size && !KQ.del.size) return;
+  const ch = { set:Object.fromEntries(KQ.set), del:[...KQ.del], clear:KQ.clear };
+  KQ.set = new Map(); KQ.del = new Set(); KQ.clear = false;
+  KQ.p = DB.update('kv', 'names:kho', cur => applyNameDelta(cur, ch));
+  try{ await KQ.p; bcast({ t:'kho', keys:ch.clear ? null : Object.keys(ch.set).concat(ch.del) }); }
+  catch(e){ toast('Không lưu được kho name. Hãy thử lại.'); }
+  finally{ KQ.p = null; }
+}
+// Sau khi name trong bộ nhớ đổi: cập nhật bảng độ dài, xóa đệm tiêu đề, vẽ lại phần bị ảnh hưởng
+function namesChanged(keys, onlyAdded){
+  if (onlyAdded && keys) keys.forEach(nameIdxAdd); else rebuildNameIdx();
+  D.ver++;
+  if (S.book) S.book.names = Object.fromEntries(D.book);
+  if (S.view === 'read') rerenderNames(keys);
+  else if (S.view === 'toc') drawToc();
+}
+// Đổi name trong bộ nhớ ngay, rồi ghi xuống (truyện: ghi luôn; kho: gom ghi)
+function changeNames(scope, ch){
+  const map = scope === 'book' ? D.book : D.kho;
+  const keys = ch.clear ? [...map.keys()] : Object.keys(ch.set || {}).concat(ch.del || []);
+  if (ch.clear) map.clear();
+  (ch.del || []).forEach(k => map.delete(k));
+  Object.entries(ch.set || {}).forEach(([k, v]) => map.set(k, v));
+  namesChanged(keys, !ch.clear && !(ch.del && ch.del.length));
+  if (scope === 'book'){
+    if (!S.book) return Promise.resolve();
+    return writeBookNames(S.book.id, ch).catch(() => toast('Không lưu được name. Hãy thử lại.'));
+  }
+  queueKho(ch);
+  return Promise.resolve();
+}
 async function saveName(zh, vi, scope){
   zh = (zh || '').trim(); vi = (vi || '').trim();
   if (!zh){ toast('Chưa có chữ Trung.'); return; }
   if (!vi){ toast('Name đang trống.'); return; }
-  if (scope === 'book'){ if (!S.book){ toast('Hãy mở một truyện trước.'); return; } D.book.set(zh, vi); await persistBookNames(); }
-  else { D.kho.set(zh, vi); await persistKho(); }
-  recalcNameMax();
+  if (scope === 'book' && !S.book){ toast('Hãy mở một truyện trước.'); return; }
   closePopup(); closeModal('mName');
-  if (S.view === 'read') rerenderKeep();
+  const p = changeNames(scope, { set:{ [zh]:vi } });
   toast('Đã lưu: ' + zh + ' = ' + vi + (scope === 'book' ? ' (truyện này)' : ' (kho chung)'));
+  await p;
 }
 
 /* ---------- name editor ---------- */
@@ -1275,12 +1711,12 @@ $$('#mName [data-use]').forEach(b => b.addEventListener('click', () => { const v
 $('#nSaveBook').addEventListener('click', () => saveName($('#nZh').value, $('#nOut').value, 'book'));
 $('#nSaveKho').addEventListener('click', () => saveName($('#nZh').value, $('#nOut').value, 'kho'));
 $('#nDel').addEventListener('click', async () => {
-  const zh = $('#nZh').value.trim(); const where = [];
-  if (D.book.delete(zh)){ await persistBookNames(); where.push('truyện này'); }
-  if (D.kho.delete(zh)){ await persistKho(); where.push('kho chung'); }
-  recalcNameMax(); closeModal('mName');
-  if (S.view === 'read') rerenderKeep();
+  const zh = $('#nZh').value.trim(); const where = [], ps = [];
+  if (D.book.has(zh) && S.book){ ps.push(changeNames('book', { del:[zh] })); where.push('truyện này'); }
+  if (D.kho.has(zh)){ ps.push(changeNames('kho', { del:[zh] })); where.push('kho chung'); }
+  closeModal('mName');
   toast(where.length ? 'Đã xóa name ' + zh + ' (' + where.join(', ') + ')' : 'Không có name để xóa');
+  await Promise.all(ps);
 });
 
 /* ---------- name manager ---------- */
@@ -1305,30 +1741,36 @@ function drawMgr(){
   $('#gClear').textContent = 'Xóa tất cả';
   $('#gClear').dataset.arm = '';
 }
-async function persistMgr(){ if (mgrTab === 'book') await persistBookNames(); else await persistKho(); recalcNameMax(); if (S.view === 'read') rerenderKeep(); }
+const mgrScope = () => mgrTab === 'book' ? 'book' : 'kho';
 $('#gBook').addEventListener('click', () => { mgrTab = 'book'; drawMgr(); });
 $('#gKho').addEventListener('click', () => { mgrTab = 'kho'; drawMgr(); });
 $('#gFind').addEventListener('input', drawMgr);
 $('#gList').addEventListener('change', async e => {
   const row = e.target.closest('.nrow'); if (!row || e.target.tagName !== 'INPUT') return;
   const v = e.target.value.trim(); if (!v) return;
-  mgrMap().set(row.dataset.k, v); await persistMgr(); toast('Đã lưu ' + row.dataset.k + ' = ' + v);
+  const p = changeNames(mgrScope(), { set:{ [row.dataset.k]:v } }); toast('Đã lưu ' + row.dataset.k + ' = ' + v);
+  await p;
 });
 $('#gList').addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b) return;
-  const row = b.closest('.nrow'); mgrMap().delete(row.dataset.k); await persistMgr(); drawMgr();
+  const row = b.closest('.nrow');
+  const p = changeNames(mgrScope(), { del:[row.dataset.k] }); drawMgr();
+  await p;
 });
 $('#gClear').addEventListener('click', async () => {
   const b = $('#gClear');
   if (!b.dataset.arm){ b.dataset.arm = '1'; b.textContent = 'Bấm lần nữa để xóa hết'; return; }
-  mgrMap().clear(); await persistMgr(); drawMgr(); toast('Đã xóa tất cả name');
+  const p = changeNames(mgrScope(), { clear:true }); drawMgr(); toast('Đã xóa tất cả name');
+  await p;
 });
 $('#gImport').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
+  e.target.value = '';
   const m = new Map(); const n = parseDict(await readFileText(f, 'auto'), m);
-  m.forEach((v, k) => mgrMap().set(k, first(v) || v));
-  await persistMgr(); drawMgr(); e.target.value = '';
+  const set = {}; m.forEach((v, k) => { set[k] = first(v) || v; });
+  const p = changeNames(mgrScope(), { set }); drawMgr();
   toast('Đã nhập ' + n + ' name');
+  await p;
 });
 $('#gExport').addEventListener('click', () => {
   const txt = [...mgrMap().entries()].map(([k, v]) => k + '=' + v).join('\r\n');
@@ -1348,29 +1790,70 @@ function drawDict(){
   $('#dRows').innerHTML = rows.map(([t, d, k, l]) => '<div class="drow"><div><b>' + t + '</b><div class="small muted">' + esc(d) + '</div></div><label class="btn filebtn">' + l + '<input type="file" accept=".txt,text/plain" data-dict="' + k + '"></label></div>').join('');
 }
 function openDict(){ drawDict(); openModal('mDict'); }
-$('#dRows').addEventListener('change', async e => {
-  const inp = e.target.closest('input[data-dict]'); if (!inp || !inp.files[0]) return;
-  const k = inp.dataset.dict;
-  toast('Đang đọc file…');
-  const txt = await readFileText(inp.files[0], 'auto');
-  const test = new Map(); const n = parseDict(txt, test);
-  if (!n){ toast('File không đúng định dạng 中文=nghĩa.'); return; }
-  if (k === 'names'){ test.forEach((v, key) => D.kho.set(key, first(v) || v)); await persistKho(); recalcNameMax(); }
-  else { await DB.put('kv', 'dict:' + k, txt); await loadDicts(); if (S.book){ D.book = new Map(Object.entries(S.book.names || {})); recalcNameMax(); } }
+let dictBusy = false;
+const dictProg = s => { $('#dProg').textContent = s || ''; };
+// Từ điển đổi: xóa đệm, vẽ lại trang đang xem
+function dictChanged(){
+  D.ver++;
   drawDict(); updateDictStat();
   if (S.view === 'read') rerenderKeep();
-  toast('Đã nạp ' + n.toLocaleString('vi-VN') + ' mục');
+  else if (S.view === 'toc') drawToc();
+  else if (S.view === 'lib') renderLib();
+}
+$('#dRows').addEventListener('change', async e => {
+  const inp = e.target.closest('input[data-dict]'); if (!inp || !inp.files[0]) return;
+  const k = inp.dataset.dict, file = inp.files[0];
+  inp.value = '';
+  if (dictBusy){ toast('Đang nạp một từ điển khác, chờ xong rồi thử lại.'); return; }
+  dictBusy = true; $('#dReset').disabled = true;
+  try{
+    dictProg('Đang đọc file…');
+    await dictReady();
+    const txt = await readFileText(file, 'auto');   // chỉ đọc file một lần
+    if (!looksLikeDict(txt)){ toast('File không đúng định dạng 中文=nghĩa.'); return; }
+    let n;
+    if (k === 'names'){
+      const m = new Map(); n = parseDict(txt, m);
+      const set = {}; m.forEach((v, key) => { set[key] = first(v) || v; });
+      changeNames('kho', { set });
+    } else {
+      const prog = f => dictProg('Đang nạp từ điển… ' + pct(f));
+      const had = k === 'vp' ? D.uVp : D.uHv;
+      await DB.put('kv', 'dict:' + k, txt);
+      if (had){
+        // Thay file đã tải lên trước đó: dựng lại (bộ cài sẵn + file mới), dùng luôn chữ vừa đọc
+        await buildDicts(prog, { [k]:txt });
+        n = k === 'vp' ? D.uVp : D.uHv;
+      } else {
+        // Chưa có file nào: chỉ thêm các mục của file vào bộ đang dùng, không nạp lại bộ cài sẵn
+        n = await parseDictAsync(txt, k === 'vp' ? D.vp : D.hv, k === 'vp' ? D.vp2 : null, prog);
+        if (k === 'vp') D.uVp = n; else D.uHv = n;
+      }
+    }
+    dictChanged();
+    toast('Đã nạp ' + n.toLocaleString('vi-VN') + ' mục');
+  }catch(err){
+    toast('Không nạp được file' + (err && err.name === 'QuotaExceededError' ? ': máy hết dung lượng lưu.' : '. Hãy thử lại.'));
+  }finally{
+    dictBusy = false; $('#dReset').disabled = false; dictProg('');
+  }
 });
 $('#dReset').addEventListener('click', async () => {
-  await DB.del('kv', 'dict:vp'); await DB.del('kv', 'dict:hv');
-  await loadDicts(); if (S.book){ D.book = new Map(Object.entries(S.book.names || {})); recalcNameMax(); }
-  drawDict(); updateDictStat(); if (S.view === 'read') rerenderKeep();
-  toast('Đã gỡ từ điển tải lên, dùng lại bộ cài sẵn');
+  if (dictBusy) return;
+  dictBusy = true; $('#dReset').disabled = true;
+  try{
+    await dictReady();
+    await DB.del('kv', 'dict:vp'); await DB.del('kv', 'dict:hv');
+    await buildDicts(f => dictProg('Đang nạp lại bộ cài sẵn… ' + pct(f)), { vp:'', hv:'' });
+    dictChanged();
+    toast('Đã gỡ từ điển tải lên, dùng lại bộ cài sẵn');
+  }catch(e){ toast('Không gỡ được từ điển. Hãy thử lại.'); }
+  finally{ dictBusy = false; $('#dReset').disabled = false; dictProg(''); }
 });
 
 /* ================= Claude translation ================= */
 let sample = null, claudeState = 'loading';
-const JOB = { running:false, ctl:null, idx:-1, bookId:null, label:'' };
+const JOB = { running:false, ctl:null, idx:-1, bookId:null, label:'', dead:null };
 const jobHere = () => JOB.running && S.book && JOB.bookId === S.book.id && JOB.idx === S.idx;
 const HIDE_CODES = new Set(['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed']);
 function errText(e){
@@ -1389,7 +1872,7 @@ function updateClaudeUI(){
   const btn = $('#bClaude');
   btn.hidden = off;
   btn.disabled = loading || (JOB.running && !jobHere());
-  btn.textContent = jobHere() ? 'Dừng dịch' : (S.trans ? 'Dịch lại' : 'Claude dịch chương này');
+  btn.textContent = jobHere() ? 'Dừng dịch' : S.tpart ? 'Dịch tiếp' : (S.trans ? 'Dịch lại' : 'Claude dịch chương này');
   $('#mCl').disabled = false;
   const note = $('#cNote');
   if (!note.classList.contains('err')){
@@ -1452,77 +1935,115 @@ function drawStream(st){
   box.innerHTML = ps.length ? ps.map((p, i) => '<p' + (i === ps.length - 1 ? ' class="stream"' : '') + '>' + esc(p) + '</p>').join('') : '<p class="stream muted">Claude đang đọc nguyên văn…</p>';
   if (st.title) $('#rSub').textContent = st.title;
 }
-async function translateChapter(b, idx, ctl, labelPrefix){
+const goneErr = () => Object.assign(new Error('book gone'), { code:'book_gone' });
+// Dịch một chương. Dừng / lỗi giữa chừng: các phần đã xong được lưu thành bản dịch dở (kv tp:…, cờ partial),
+// lần sau bấm Dịch tiếp thì dịch từ phần kế. fresh = true: bỏ bản dở, dịch lại từ đầu.
+async function translateChapter(b, idx, ctl, labelPrefix, fresh){
   const ch = await DB.get('chapters', ck(b.id, idx));
-  if (!ch) return;
+  if (!ch || !isStr(ch.zh)) return false;
   const paras = splitParas(ch.zh);
-  const chunks = chunkParas(paras, 2200);
+  const old = fresh ? null : await DB.get('kv', tpk(b.id, idx));
+  const resume = okTrans(old) && old.partial && isNat(old.partial.zhDone) && old.partial.zhDone < paras.length && old.partial.zhTotal === paras.length ? old : null;
+  const start = resume ? resume.partial.zhDone : 0;
+  const before = resume ? resume.partial.part : 0;
+  const chunks = chunkParas(paras.slice(start), 2200);
+  const parts = before + chunks.length;
   const gloss = glossary((ch.zhTitle || '') + '\n' + ch.zh, b.names || {});
-  const withTitle = !!(ch.zhTitle && hasHan(ch.zhTitle));
-  let done = [], title = '', truncated = false;
+  const withTitle = !resume && !!(ch.zhTitle && hasHan(ch.zhTitle));
+  let done = resume ? resume.text.split('\n').filter(Boolean) : [], title = resume ? (resume.title || '') : '', truncated = resume ? !!resume.truncated : false;
+  let zhDone = start, k = 0;
   JOB.idx = idx; JOB.bookId = b.id;
   const live = () => S.view === 'read' && jobHere() && S.mode === 'cl';
-  for (let k = 0; k < chunks.length; k++){
-    JOB.label = labelPrefix + (chunks.length > 1 ? ' · phần ' + (k + 1) + '/' + chunks.length : '');
-    updateClaudeUI();
-    const isFirst = k === 0 && withTitle;
-    const prompt = buildPrompt({ text:chunks[k].join('\n\n'), withTitle:isFirst, zhTitle:ch.zhTitle, book:bookTitle(b), notes:b.notes, gloss, prev:done.slice(-2).join('\n\n'), part:k + 1, parts:chunks.length });
-    S.streaming = { title, paras:done.slice() };
-    if (live()) drawStream(S.streaming);
-    const res = await sample(prompt, {
-      signal:ctl.signal, modelTier:ST.tier, cache:false,
-      onText: ({ text }) => {
-        const r = parseOut(text, isFirst);
-        S.streaming = { title:isFirst ? r.title : title, paras:done.concat(r.paras) };
-        if (live()) drawStream(S.streaming);
-      }
-    });
-    const r = parseOut(res.text, isFirst);
-    if (isFirst) title = r.title;
-    done = done.concat(r.paras);
-    if (res.truncated) truncated = true;
+  try{
+    for (; k < chunks.length; k++){
+      JOB.label = labelPrefix + (parts > 1 ? ' · phần ' + (before + k + 1) + '/' + parts : '');
+      updateClaudeUI();
+      const isFirst = k === 0 && withTitle;
+      const prompt = buildPrompt({ text:chunks[k].join('\n\n'), withTitle:isFirst, zhTitle:ch.zhTitle, book:bookTitle(b), notes:b.notes, gloss, prev:done.slice(-2).join('\n\n'), part:before + k + 1, parts });
+      S.streaming = { title, paras:done.slice() };
+      if (live()) drawStream(S.streaming);
+      const res = await sample(prompt, {
+        signal:ctl.signal, modelTier:ST.tier, cache:false,
+        onText: ({ text }) => {
+          const r = parseOut(text, isFirst);
+          S.streaming = { title:isFirst ? r.title : title, paras:done.concat(r.paras) };
+          if (live()) drawStream(S.streaming);
+        }
+      });
+      const r = parseOut(res.text, isFirst);
+      if (isFirst) title = r.title;
+      done = done.concat(r.paras);
+      zhDone += chunks[k].length;
+      if (res.truncated) truncated = true;
+    }
+  }catch(e){
+    if (k > 0 && JOB.dead !== b.id){
+      const rec = { title, text:done.join('\n'), at:Date.now(), tier:ST.tier, truncated, partial:{ part:before + k, parts, zhDone, zhTotal:paras.length } };
+      try{
+        if (await DB.putIf('kv', tpk(b.id, idx), rec, 'books', b.id)){
+          e.partial = rec.partial;
+          if (S.book && S.book.id === b.id){ S.partSet.add(idx); if (S.idx === idx) S.tpart = rec; }
+        }
+      }catch(e2){}
+    } else if (resume) e.partial = resume.partial;
+    throw e;
   }
   const rec = { title:title || chapterTitle(ch.zhTitle, idx), text:done.join('\n'), at:Date.now(), tier:ST.tier, truncated };
-  await DB.put('trans', ck(b.id, idx), rec);
-  if (S.book && S.book.id === b.id){ S.transSet.add(idx); if (S.idx === idx) S.trans = rec; }
+  // Chỉ ghi khi truyện còn trong tủ (có thể vừa bị xóa trong lúc dịch)
+  if (!await DB.putIf('trans', ck(b.id, idx), rec, 'books', b.id)) throw goneErr();
+  DB.del('kv', tpk(b.id, idx)).catch(() => {});
+  if (S.book && S.book.id === b.id){ S.transSet.add(idx); S.partSet.delete(idx); if (S.idx === idx){ S.trans = rec; S.tpart = null; } }
+  return true;
 }
-async function runJob(book, list, labelFn){
+const isCancel = e => !!e && (e.code === 'cancelled' || e.name === 'AbortError' || e.code === 'book_gone');
+async function runJob(book, list, labelFn, fresh){
   if (JOB.running) return;
-  JOB.running = true; JOB.ctl = new AbortController(); S.streaming = null;
+  JOB.running = true; JOB.ctl = new AbortController(); JOB.bookId = book.id; JOB.dead = null; S.streaming = null;
   setNote('');
   const prog = $('#tProg'), pw = $('#tProgWrap');
   pw.hidden = list.length < 2; prog.style.width = '0%';
   let ok = 0, err = null;
+  const total = list.length;
   try{
-    for (let n = 0; n < list.length; n++){
+    for (let n = 0; n < total; n++){
       if (JOB.ctl.signal.aborted) break;
-      await translateChapter(book, list[n], JOB.ctl, labelFn(n, list[n]));
-      ok++;
-      prog.style.width = Math.round(ok / list.length * 100) + '%';
-      $('#tState').textContent = 'Đã dịch ' + ok + ' / ' + list.length + ' chương';
+      if (await translateChapter(book, list[n], JOB.ctl, labelFn(n, list[n]), fresh)) ok++;
+      prog.style.width = Math.round((n + 1) / total * 100) + '%';
+      $('#tState').textContent = 'Đã dịch ' + ok + ' / ' + total + ' chương';
     }
   }catch(e){ err = e; }
-  JOB.running = false; JOB.idx = -1; JOB.bookId = null; S.streaming = null;
-  if (err && err.code === 'cancelled'){ toast('Đã dừng dịch'); }
-  else if (err){
+  const stopped = !!(JOB.ctl.signal.aborted || isCancel(err)), dead = JOB.dead === book.id || !!(err && err.code === 'book_gone');
+  JOB.running = false; JOB.idx = -1; JOB.bookId = null; JOB.dead = null; S.streaming = null;
+  const part = err && err.partial ? ' Đã lưu bản dịch dở (xong phần ' + err.partial.part + '/' + err.partial.parts + '), bấm Dịch tiếp để dịch nốt.' : '';
+  if (dead){
+    toast('Đã dừng dịch vì truyện đã bị xóa.');
+  } else if (stopped){
+    const msg = (total > 1 ? 'Đã dừng. Claude đã dịch xong ' + ok + ' / ' + total + ' chương.' : 'Đã dừng dịch.') + part;
+    toast(msg, part ? 6000 : 3200);
+    $('#tState').textContent = msg;
+  } else if (err){
     if (HIDE_CODES.has(err.code)) claudeState = 'off';
-    setNote(errText(err), true);
-    $('#tState').textContent = errText(err);
-  } else if (list.length > 1) toast('Claude đã dịch xong ' + ok + ' chương');
-  if (S.view === 'read' && S.book){ if (!S.trans) S.trans = await DB.get('trans', ck(S.book.id, S.idx)) || null; renderChapter(); }
-  if (S.view === 'toc' && S.book) openToc(S.book.id);
+    const msg = errText(err) + (total > 1 ? ' Đã dịch xong ' + ok + ' / ' + total + ' chương.' : '') + part;
+    setNote(msg, true);
+    $('#tState').textContent = msg;
+  } else if (total > 1) toast('Claude đã dịch xong ' + ok + ' chương');
+  if (S.view === 'read' && S.book && !dead){
+    if (!S.trans) S.trans = await DB.get('trans', ck(S.book.id, S.idx)) || null;
+    renderChapter();
+  }
+  if (S.view === 'toc' && S.book && !dead) drawToc();
   updateClaudeUI();
 }
-function translateCurrent(){
+function translateCurrent(fresh){
   if (JOB.running){ if (jobHere()) JOB.ctl.abort(); else toast('Claude đang dịch chương khác. Bấm Dừng ở thanh phía trên nếu muốn đổi.'); return; }
   if (!sample) return;
   S.mode = 'cl'; LS.set('tc-mode', 'cl');
   $('#cNote').classList.remove('err');
   renderChapter();
   const i0 = S.idx;
-  runJob(S.book, [i0], () => 'Claude đang dịch chương ' + (i0 + 1));
+  runJob(S.book, [i0], () => 'Claude đang dịch chương ' + (i0 + 1), fresh === true);
 }
-$('#bClaude').addEventListener('click', translateCurrent);
+$('#bClaude').addEventListener('click', () => translateCurrent());
 $('#jobStop').addEventListener('click', () => JOB.ctl && JOB.ctl.abort());
 $('#tStart').addEventListener('click', async () => {
   if (JOB.running){ JOB.ctl.abort(); return; }
@@ -1532,32 +2053,208 @@ $('#tStart').addEventListener('click', async () => {
   if (to < from) [from, to] = [to, from];
   const redo = $('#tRedo').checked;
   const list = [];
-  for (let i = from - 1; i < to; i++) if (redo || !S.transSet.has(i)) list.push(i);
+  // Chương dịch dở (chưa có bản đầy đủ) được dịch tiếp; "Dịch lại" thì dịch lại từ đầu
+  for (let i = from - 1; i < to; i++) if (redo || !S.transSet.has(i) || S.partSet.has(i)) list.push(i);
   if (!list.length){ $('#tState').textContent = 'Các chương này đã được dịch. Đánh dấu "Dịch lại" nếu muốn dịch lần nữa.'; return; }
   $('#tState').textContent = 'Bắt đầu dịch ' + list.length + ' chương…';
-  runJob(b, list, (n, i) => 'Claude đang dịch chương ' + (i + 1) + ' (' + (n + 1) + '/' + list.length + ')');
+  runJob(b, list, (n, i) => 'Claude đang dịch chương ' + (i + 1) + ' (' + (n + 1) + '/' + list.length + ')', redo);
 });
 
 /* ================= backup ================= */
-$('#bBackup').addEventListener('click', async () => {
-  const data = { app:'thu-cac', v:1, at:Date.now(), books:await DB.entries('books'), chapters:await DB.entries('chapters'), trans:await DB.entries('trans'), kho:Object.fromEntries(D.kho) };
-  const d = new Date(), pad = n => String(n).padStart(2, '0');
-  saveFile('thu-cac-sao-luu-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '.json', JSON.stringify(data));
-});
-$('#fRestore').addEventListener('change', async e => {
-  const f = e.target.files[0]; if (!f) return;
+const pad2 = n => String(n).padStart(2, '0');
+const dateTag = () => { const d = new Date(); return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()); };
+const newBookId = () => 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+// Dựng file sao lưu từ nhiều mảnh nhỏ (từng bản ghi, gom thành Blob mỗi ~1MB) thay vì một chuỗi JSON khổng lồ.
+// Định dạng như cũ: { app:'thu-cac', v:1, at, books, chapters, trans, kho } + trường mới tpart (bản dịch dở, bản cũ bỏ qua).
+// ids: null = cả tủ; mảng id = chỉ các truyện đó (không kèm kho chung).
+async function buildBackup(ids){
+  const blobs = []; let parts = [], size = 0;
+  const push = s => { parts.push(s); size += s.length; if (size > 1048576){ blobs.push(new Blob(parts)); parts = []; size = 0; } };
+  const books = ids ? (await Promise.all(ids.map(id => DB.get('books', id)))).filter(Boolean).map(b => [b.id, b]) : await DB.entries('books');
+  push('{"app":"thu-cac","v":1,"at":' + Date.now() + ',"books":[');
+  books.forEach(([k, v], i) => push((i ? ',' : '') + JSON.stringify([k, v])));
+  const dump = async (st, pres, name) => {
+    push('],"' + name + '":[');
+    let n = 0;
+    for (const p of pres) await DB.scan(st, p, (k, v) => { push((n++ ? ',' : '') + JSON.stringify([k, v])); });
+  };
+  const ks = books.map(([k]) => k);
+  await dump('chapters', ids ? ks.map(k => k + ':') : [''], 'chapters');
+  await dump('trans', ids ? ks.map(k => k + ':') : [''], 'trans');
+  await dump('kv', ids ? ks.map(k => 'tp:' + k + ':') : ['tp:'], 'tpart');
+  let kho = {};
+  if (!ids){ await flushKho(); try{ kho = cleanNames(await DB.get('kv', 'names:kho')); }catch(e){ kho = Object.fromEntries(D.kho); } }
+  push('],"kho":' + JSON.stringify(kho) + '}');
+  blobs.push(new Blob(parts));
+  return new Blob(blobs, { type:'application/json' });
+}
+async function doBackup(ids, filename){
   try{
-    const data = JSON.parse(await readFileText(f, 'utf-8'));
-    if (data.app !== 'thu-cac') throw new Error('bad');
-    await DB.putMany('books', data.books || []);
-    await DB.putMany('chapters', data.chapters || []);
-    await DB.putMany('trans', data.trans || []);
-    Object.entries(data.kho || {}).forEach(([k, v]) => D.kho.set(k, v));
-    await persistKho(); recalcNameMax();
-    toast('Đã khôi phục ' + (data.books || []).length + ' truyện');
-    renderLib();
-  }catch(err){ toast('File không phải bản sao lưu của Thư Các.'); }
-  e.target.value = '';
+    toast('Đang tạo file sao lưu…', 60000);
+    await saveFile(filename, await buildBackup(ids));
+  }catch(e){
+    toast('Không tạo được file sao lưu' + (e && e.name === 'QuotaExceededError' ? ': máy hết dung lượng.' : '. Hãy thử lại, hoặc sao lưu từng truyện.'), 6000);
+  }
+}
+$('#bBackup').addEventListener('click', async () => {
+  const btn = $('#bBackup'); if (btn.disabled) return;
+  btn.disabled = true;
+  try{ await doBackup(null, 'thu-cac-sao-luu-' + dateTag() + '.json'); }finally{ btn.disabled = false; }
+});
+// Sao lưu MỘT truyện (chương, bản dịch, name riêng của truyện). File khôi phục được như bản sao lưu cả tủ.
+async function backupBook(id){
+  const b = await DB.get('books', id);
+  if (!b){ toast('Không thấy truyện này.'); return; }
+  const name = bookTitle(b).replace(/[\\/:*?"<>|]/g, '').trim().slice(0, 60) || 'truyen';
+  await doBackup([id], 'thu-cac-' + name + '-' + dateTag() + '.json');
+}
+
+/* ---------- khôi phục: kiểm kiểu mọi thứ đọc từ file ---------- */
+const ID_RE = /^[A-Za-z0-9_-]{1,80}$/;
+const KEY_RE = /^([A-Za-z0-9_-]{1,80}):(\d{6})$/;
+const TPK_RE = /^tp:([A-Za-z0-9_-]{1,80}):(\d{6})$/;
+const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+function cleanBook(k, v, cnt){
+  if (!ID_RE.test(k) || !isObj(v)){ cnt.bad++; return null; }
+  const b = {};
+  // Giữ các trường đơn giản khác (chuỗi, số, đúng/sai) để trường mới của bản sau không bị mất
+  for (const f of Object.keys(v)){ const x = v[f]; if (x === null || isStr(x) || typeof x === 'boolean' || isNum(x)) b[f] = x; }
+  b.id = k;
+  for (const f of ['zhTitle', 'viTitle', 'author', 'notes']){ if (v[f] != null && !isStr(v[f])) cnt.bad++; b[f] = isStr(v[f]) ? v[f] : ''; }
+  b.names = cleanNames(v.names, cnt);
+  if (Array.isArray(v.titles)) b.titles = v.titles.map(t => isStr(t) ? t : (cnt.bad++, ''));
+  else { if (v.titles != null) cnt.bad++; delete b.titles; }
+  if (isNat(v.count)) b.count = v.count; else { cnt.bad++; b.count = -1; }   // -1: đếm lại theo chương trong file
+  if (v.lastRead == null) b.lastRead = null; else if (isNat(v.lastRead)) b.lastRead = v.lastRead; else { cnt.bad++; b.lastRead = null; }
+  for (const f of ['createdAt', 'updatedAt']){ if (!isNum(v[f])){ if (v[f] != null) cnt.bad++; b[f] = Date.now(); } }
+  return b;
+}
+function cleanChap(v, cnt){ if (!isObj(v) || !isStr(v.zh)){ cnt.bad++; return null; } return { zhTitle:isStr(v.zhTitle) ? v.zhTitle : '', zh:v.zh }; }
+function cleanTrans(v, cnt, part){
+  if (!isObj(v) || !isStr(v.text)){ cnt.bad++; return null; }
+  const t = { title:isStr(v.title) ? v.title : '', text:v.text, at:isNum(v.at) ? v.at : 0, truncated:v.truncated === true };
+  if (isStr(v.tier)) t.tier = v.tier;
+  if (part){
+    const p = v.partial;
+    if (!isObj(p) || ![p.part, p.parts, p.zhDone, p.zhTotal].every(isNat)){ cnt.bad++; return null; }
+    t.partial = { part:p.part, parts:p.parts, zhDone:p.zhDone, zhTotal:p.zhTotal };
+  }
+  return t;
+}
+function cleanBackup(data){
+  const cnt = { bad:0 };
+  const list = x => Array.isArray(x) ? x : (x != null && cnt.bad++, []);
+  const pair = e => Array.isArray(e) && e.length === 2 && isStr(e[0]) ? e : (cnt.bad++, null);
+  const books = new Map(), chaps = new Map(), trans = new Map(), tps = new Map();
+  for (const e of list(data.books)){ const p = pair(e); if (!p) continue; const b = cleanBook(p[0], p[1], cnt); if (b) books.set(b.id, b); }
+  const group = (src, re, map, clean) => {
+    for (const e of list(src)){
+      const p = pair(e); if (!p) continue;
+      const m = re.exec(p[0]);
+      if (!m || !books.has(m[1])){ cnt.bad++; continue; }
+      const v = clean(p[1]); if (!v) continue;
+      let a = map.get(m[1]); if (!a) map.set(m[1], a = []);
+      a.push([+m[2], v]);
+    }
+  };
+  group(data.chapters, KEY_RE, chaps, v => cleanChap(v, cnt));
+  group(data.trans, KEY_RE, trans, v => cleanTrans(v, cnt, false));
+  group(data.tpart, TPK_RE, tps, v => cleanTrans(v, cnt, true));
+  for (const b of books.values()){
+    if (b.count < 0) b.count = (chaps.get(b.id) || []).reduce((m, [i]) => Math.max(m, i + 1), 0);
+    if (b.lastRead != null && b.lastRead >= b.count) b.lastRead = b.count ? b.count - 1 : null;
+  }
+  return { books, chaps, trans, tps, kho:cleanNames(data.kho, cnt), bad:cnt.bad };
+}
+// Bảng hỏi trong trang (không dùng confirm): trả về 'over' | 'keep' | 'copy', hoặc null nếu hủy
+let rsDone = null;
+function askRestore(dup, khoDiff){
+  return new Promise(res => {
+    rsDone = v => { rsDone = null; res(v); };
+    const li = dup.slice(0, 50).map(b => '<li>' + esc(bookTitle(b)) + '</li>').join('') + (dup.length > 50 ? '<li>và ' + esc(dup.length - 50) + ' truyện khác</li>' : '');
+    $('#rsBody').innerHTML =
+      (dup.length ? '<p style="margin:0">' + esc(dup.length) + ' truyện trong file đã có trong tủ. Bản trong tủ có thể có chỗ đọc, name hoặc chương mới hơn bản trong file.</p><ul class="rslist">' + li + '</ul>' : '') +
+      (khoDiff ? '<p style="margin:0">' + esc(khoDiff) + ' name trong kho chung của file khác với name bạn đang dùng.</p>' : '') +
+      '<p class="small muted" style="margin:0">Chọn một cách, áp dụng cho tất cả. <b>Giữ bản đang có</b>: chỉ thêm truyện và name chưa có. <b>Ghi đè</b>: thay bằng bản trong file.' +
+      (dup.length ? ' <b>Thêm thành bản sao</b>: giữ bản đang có và thêm bản trong file thành truyện riêng.' : '') + '</p>';
+    $('#rsCopy').hidden = !dup.length;
+    openModal('mRestore');
+    $('#rsKeep').focus();
+  });
+}
+onClose.mRestore = () => { if (rsDone) rsDone(null); };
+[['#rsKeep', 'keep'], ['#rsOver', 'over'], ['#rsCopy', 'copy']].forEach(([s, v]) => $(s).addEventListener('click', () => {
+  const f = rsDone; rsDone = null; closeModal('mRestore'); if (f) f(v);
+}));
+function restoreSummary(s, bad){
+  const n = s.added + s.over + s.copied, ex = [];
+  let msg = n ? 'Đã khôi phục ' + n + ' truyện' : 'Không có truyện nào được thêm';
+  if (s.over) ex.push('ghi đè ' + s.over);
+  if (s.copied) ex.push(s.copied + ' bản sao');
+  if (ex.length) msg += ' (' + ex.join(', ') + ')';
+  if (s.kept) msg += ', giữ nguyên ' + s.kept + ' truyện đang có';
+  if (s.names) msg += ', cập nhật ' + s.names + ' name trong kho chung';
+  msg += '.';
+  if (bad) msg += ' Bỏ qua ' + bad + ' mục sai định dạng.';
+  return msg;
+}
+async function restoreBackup(data){
+  await dictReady();
+  const R = cleanBackup(data);
+  await flushKho();
+  const have = new Set(await DB.keys('books', ''));
+  const dup = [...R.books.values()].filter(b => have.has(b.id));
+  let curKho = {};
+  try{ curKho = cleanNames(await DB.get('kv', 'names:kho')); }catch(e){}
+  const khoDiff = Object.keys(R.kho).filter(k => hasOwn(curKho, k) && curKho[k] !== R.kho[k]).length;
+  let mode = 'keep';
+  if (dup.length || khoDiff){
+    mode = await askRestore(dup, khoDiff);
+    if (!mode){ toast('Đã hủy khôi phục.'); return; }
+  }
+  const sum = { added:0, over:0, kept:0, copied:0, names:0 };
+  for (const b of R.books.values()){
+    let id = b.id, rec = b;
+    if (have.has(id)){
+      if (mode === 'keep'){ sum.kept++; continue; }
+      if (mode === 'over'){
+        await DB.delPrefix('chapters', id + ':'); await DB.delPrefix('trans', id + ':'); await DB.delPrefix('kv', 'tp:' + id + ':');
+        sum.over++;
+      } else {
+        id = newBookId();
+        rec = Object.assign({}, b, { id, viTitle:bookTitle(b) + ' (bản sao)', createdAt:Date.now() });
+        sum.copied++;
+      }
+    } else sum.added++;
+    await DB.putMany('chapters', (R.chaps.get(b.id) || []).map(([i, v]) => [ck(id, i), v]));
+    await DB.putMany('trans', (R.trans.get(b.id) || []).map(([i, v]) => [ck(id, i), v]));
+    await DB.putMany('kv', (R.tps.get(b.id) || []).map(([i, v]) => [tpk(id, i), v]));
+    await DB.put('books', id, rec);   // ghi truyện sau cùng: chỉ hiện trong tủ khi chương đã ghi xong
+    if (id === b.id && have.has(id)) bcast({ t:'book', id });
+  }
+  // Kho name: thêm name chưa có; trùng khóa thì giữ name đang có, trừ khi chọn Ghi đè
+  const set = {};
+  for (const [k, v] of Object.entries(R.kho)) if (!hasOwn(curKho, k) || (mode === 'over' && curKho[k] !== v)) set[k] = v;
+  sum.names = Object.keys(set).length;
+  if (sum.names){
+    await DB.update('kv', 'names:kho', cur => applyNameDelta(cur, { set }));
+    Object.entries(set).forEach(([k, v]) => D.kho.set(k, v));
+    namesChanged(Object.keys(set), true);
+    bcast({ t:'kho' });
+  }
+  D.ver++;
+  bcast({ t:'lib' });
+  toast(restoreSummary(sum, R.bad), 7000);
+  renderLib();
+}
+$('#fRestore').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  let data = null;
+  try{ data = JSON.parse(await readFileText(f, 'utf-8')); }catch(err){ data = null; }
+  if (!isObj(data) || data.app !== 'thu-cac'){ toast('File không phải bản sao lưu của Thư Các.'); return; }
+  try{ await restoreBackup(data); }
+  catch(err){ toast('Khôi phục bị lỗi giữa chừng' + (err && err.name === 'QuotaExceededError' ? ': máy hết dung lượng lưu.' : '. Hãy thử lại.'), 6000); renderLib(); }
 });
 
 /* ================= settings panel ================= */
@@ -1588,11 +2285,11 @@ $('#bAdd2').addEventListener('click', () => openAdd('new'));
 $('#bDict').addEventListener('click', openDict);
 $('#bKho').addEventListener('click', () => openMgr('kho'));
 $$('.modal').forEach(m => {
-  m.addEventListener('click', e => { if (e.target === m || e.target.closest('[data-close]')) m.hidden = true; });
+  m.addEventListener('click', e => { if (e.target === m || e.target.closest('[data-close]')) closeModal(m.id); });
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape'){
-    const m = anyModal(); if (m){ m.hidden = true; return; }
+    const m = anyModal(); if (m){ closeModal(m.id); return; }
     if (!popup.hidden){ closePopup(); return; }
     if (!$('#panel').hidden){ $('#panel').hidden = true; return; }
   }
@@ -1603,26 +2300,100 @@ document.addEventListener('keydown', e => {
 window.addEventListener('resize', () => { if (!popup.hidden) placePopup(); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applySettings);
 
+/* ================= đồng bộ giữa các tab ================= */
+function diffKeys(a, b){
+  const out = [];
+  for (const [k, v] of a) if (b.get(k) !== v) out.push(k);
+  for (const k of b.keys()) if (!a.has(k)) out.push(k);
+  return out;
+}
+const mgrIdle = () => !$('#mMgr').hidden && !$('#mMgr').contains(document.activeElement);
+async function reloadKho(){
+  let kho;
+  try{ kho = await DB.get('kv', 'names:kho'); }catch(e){ return; }
+  const m = new Map(Object.entries(cleanNames(kho)));
+  applyKhoQueue(m);   // giữ các thay đổi tab này chưa kịp ghi
+  const keys = diffKeys(D.kho, m);
+  if (!keys.length) return;
+  D.kho = m;
+  namesChanged(keys);
+  if (mgrIdle()) drawMgr();
+  if (S.view === 'lib') updateDictStat();
+}
+async function reloadBook(id){
+  if (!S.book || S.book.id !== id) return;
+  let b;
+  try{ b = await DB.get('books', id); }catch(e){ return; }
+  if (!S.book || S.book.id !== id) return;
+  if (!b){ toast('Truyện này vừa bị xóa ở tab khác.'); renderLib(); return; }
+  fixBook(b);
+  const m = new Map(Object.entries(b.names));
+  const keys = diffKeys(D.book, m), more = b.count !== S.book.count;
+  Object.assign(S.book, b, { lastRead:S.book.lastRead });
+  D.book = m;
+  if (more) D.ver++;
+  if (keys.length) namesChanged(keys);
+  if (mgrIdle()) drawMgr();
+  if (S.view === 'toc' && (more || !keys.length)) drawToc();
+  else if (S.view === 'read'){ if (more) rerenderKeep(); else drawHead(); }
+}
+if (BC) BC.onmessage = e => {
+  const m = e.data; if (!isObj(m) || !D.loaded) return;
+  if (m.t === 'kho') reloadKho();
+  else if (m.t === 'book' && isStr(m.id)) reloadBook(m.id);
+  else if (m.t === 'del' && isStr(m.id)){
+    if (JOB.running && JOB.bookId === m.id){ JOB.dead = m.id; JOB.ctl.abort(); }
+    if (S.book && S.book.id === m.id){ toast('Truyện này vừa bị xóa ở tab khác.'); renderLib(); }
+    else if (S.view === 'lib') renderLib();
+  } else if (m.t === 'lib' && S.view === 'lib') renderLib();
+};
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden){ flushKho(); return; }
+  // Không có BroadcastChannel: quay lại tab thì đọc lại name mới nhất
+  if (!BC && D.loaded){ reloadKho(); if (S.book) reloadBook(S.book.id); }
+});
+window.addEventListener('pagehide', () => { flushKho(); });
+
 /* ================= boot ================= */
+// Thứ tự: mở dữ liệu → hiện tủ truyện / trang đang đọc ngay → nạp từ điển theo từng khối → vẽ lại
+function afterDicts(){
+  updateDictStat();
+  if (S.view === 'lib') renderLib();
+  else if (S.view === 'toc' && !S.pre) drawToc();
+  else if (S.view === 'read' && !S.pre && S.book){
+    if (S.mode !== 'cv') drawHead();
+    else { const y = S.wantY; S.wantY = null; if (y != null){ renderChapter(); window.scrollTo(0, y); } else rerenderKeep(); }
+  }
+}
 (async function boot(){
   const last = LS.get('tc-last', {});   // đọc trước khi show() ghi đè
   applySettings();
+  const waitT = setTimeout(() => { $('#dbWait').hidden = false; }, 800);
+  const memT = setTimeout(() => { $('#dbMem').hidden = false; }, 8000);
   await DB.open();
+  clearTimeout(waitT); clearTimeout(memT); $('#dbWait').hidden = true;
   $('#memBanner').hidden = !DB.isMem;
+  if (!DB.isMem) askPersist();
   show('lib');
   $('#libEmpty').hidden = true;
+  await loadKho();
   const prePromise = loadPreList();
-  await loadDicts();
-  PRE = await prePromise;
-  if (last.pre && findPre(last.pre) && (last.view === 'read' || last.view === 'toc')){
-    if (last.view === 'read') await openPre(last.pre); else openPreToc(last.pre);
-  } else if (last.book && (last.view === 'read' || last.view === 'toc')){
+  buildDicts(bootProg).catch(() => {}).then(() => { D.loaded = true; D.ver++; dictDone(); afterDicts(); });
+  let shown = false;
+  if (last.pre && (last.view === 'read' || last.view === 'toc')){
+    PRE = await prePromise;
+    if (findPre(last.pre)){ shown = true; if (last.view === 'read') await openPre(last.pre); else openPreToc(last.pre); }
+  }
+  if (!shown && last.book && (last.view === 'read' || last.view === 'toc')){
     const b = await loadBook(last.book);
-    if (b){ if (last.view === 'read') await openBook(b.id); else await openToc(b.id); }
-    else await renderLib();
-  } else await renderLib();
-  updateDictStat();
+    if (b){ shown = true; if (last.view === 'read') await openBook(b.id); else await openToc(b.id); }
+  }
+  S.booting = false;
+  if (!shown) await renderLib();
+  PRE = await prePromise;
+  if (S.view === 'lib') drawPreLib();
 })();
+$('#dbMem').addEventListener('click', () => DB.useMem());
 (async function connect(){
   try{
     const c = window.claude && window.claude.use ? window.claude : null;
