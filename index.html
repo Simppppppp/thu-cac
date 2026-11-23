@@ -134,14 +134,25 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 .tile:hover .tt{color:var(--dk-accent-hi)}
 .tile .tt{display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; font-weight:600; font-size:16px; line-height:1.4; margin-top:6px}
 .tile .ta{font-size:14px; color:var(--dk-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.cvbox .pg{position:absolute; left:0; right:0; bottom:0; height:4px; background:rgba(0,0,0,.6)}
-.cvbox .pg i{display:block; height:100%; background:var(--dk-accent)}
+/* Vạch tiến độ: rãnh mờ chạy cả bề ngang, nằm đè lên viền khung trong của bìa (4% bề ngang tính từ mép), lùi khỏi góc bo
+   nên không bị cắt; phần đã đọc tối thiểu 8px để mới đọc 1 chương của truyện rất dài vẫn thấy */
+.cvbox .pg{position:absolute; left:4%; right:4%; bottom:calc(2.667% - 2px); height:4px; border-radius:2px; background:rgba(0,0,0,.62); box-shadow:0 0 0 1px rgba(255,255,255,.2)}
+.cvbox .pg i{display:block; height:100%; min-width:8px; max-width:100%; border-radius:inherit; background:var(--dk-accent); box-shadow:0 0 6px rgba(255,107,61,.55)}
 @media (max-width:600px){.tile .tt{font-size:15px}.tile .ta{font-size:13px}}
 @media (prefers-reduced-motion: reduce){.cvbox{transition:none}.tile:hover .cvbox{transform:none}}
-.empty{border:1px dashed color-mix(in srgb, var(--rf) 30%, transparent); border-radius:14px; padding:28px 24px; display:grid; gap:14px; background:var(--dk-surface); max-width:760px}
+.empty{border:1px dashed color-mix(in srgb, var(--rf) 30%, transparent); border-radius:14px; padding:28px 24px; display:grid; grid-template-columns:minmax(0,1fr); gap:14px; background:var(--dk-surface); max-width:760px}
 .empty h2{font-family:var(--font-title); margin:0; font-size:22px}
-.empty ol{margin:0; padding-left:20px; display:grid; gap:6px; color:#d4d4d9}
+.empty ol{margin:0; padding-left:20px; display:grid; gap:6px; color:#d4d4d9; overflow-wrap:anywhere}
 .empty .row{gap:10px}
+/* nút dài (đoạn mẫu) không đẩy khung rộng quá màn hình: hết chỗ thì xuống dòng trong nút */
+.empty .row .dbtn{max-width:100%; white-space:normal; text-align:center}
+#bSample{display:inline-block}   /* chữ chạy như đoạn văn thường (khoảng trắng giữa hai phần giữ nguyên) */
+@media (max-width:480px){
+  .empty{padding:22px 18px}
+  .empty .row > *{flex:1 1 100%}
+  #bSample{border-radius:16px; padding-block:8px}
+  #bSample .smp{display:block; margin-top:2px; font-size:13px; font-weight:400; color:var(--dk-muted)}
+}
 
 /* ---------- bìa tự tạo (chỉ HTML/CSS): bảng màu và hoa văn chọn theo mã băm của id ---------- */
 .cover{position:relative; display:block; aspect-ratio:2/3; width:100%; overflow:hidden; container-type:inline-size; isolation:isolate; background:linear-gradient(155deg, var(--c1), var(--c2)); color:var(--ci); font-family:var(--font-ui); line-height:1.2}
@@ -362,6 +373,16 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 #gear{position:fixed; z-index:30; right:calc(18px + env(safe-area-inset-right, 0px)); bottom:calc(18px + env(safe-area-inset-bottom, 0px)); width:56px; height:56px; border-radius:50%; border:1px solid var(--line); background:var(--card); color:var(--muted); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,.15)}
 #gear svg{width:28px; height:28px}
 #panel{position:fixed; z-index:31; right:calc(18px + env(safe-area-inset-right, 0px)); bottom:calc(84px + env(safe-area-inset-bottom, 0px)); width:min(330px, calc(100vw - 32px)); max-height:calc(100vh - 120px); overflow:auto; background:#f6f5f2; color:#1b1b1b; border:1px solid rgba(0,0,0,.15); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.25); color-scheme:light}
+/* Màn hẹp: nút nhỏ hơn, sát góc hơn; đang cuộn xuống để đọc thì lùi xuống dưới mép (lớp away), cuộn lên hoặc tới cuối chương thì hiện lại */
+#gear{transition:transform .2s ease, opacity .2s ease}
+@media (max-width:500px){
+  #gear{width:48px; height:48px; right:calc(12px + env(safe-area-inset-right, 0px)); bottom:calc(12px + env(safe-area-inset-bottom, 0px))}
+  #gear svg{width:24px; height:24px}
+  #gear.away{transform:translateY(calc(100% + 24px)); opacity:0; pointer-events:none}
+  #gear.away:focus-visible{transform:none; opacity:1; pointer-events:auto}
+  #panel{right:calc(12px + env(safe-area-inset-right, 0px)); bottom:calc(70px + env(safe-area-inset-bottom, 0px))}
+}
+@media (prefers-reduced-motion: reduce){#gear{transition:none}}
 #panel .pin{padding:12px 12px 10px; display:grid; gap:8px}
 #panel .lbl{display:flex; justify-content:space-between; align-items:center; font-size:15px}
 #panel input[type=color]{width:74px; height:28px; border:1px solid #333; padding:0; background:none}
@@ -447,6 +468,11 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 .drow{display:grid; grid-template-columns:1fr auto; gap:4px 12px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line)}
 .drow:last-child{border-bottom:0}
 .drow b{font-weight:600}
+/* màn hẹp: nút tải file (tên file dài) xuống hàng riêng dưới phần chữ, không ép cột chữ */
+@media (max-width:480px){
+  .drow{grid-template-columns:minmax(0,1fr); gap:8px}
+  .drow > .btn{justify-self:start; max-width:100%; overflow-wrap:anywhere}
+}
 .filebtn{position:relative; overflow:hidden}
 .filebtn input{position:absolute; inset:0; opacity:0; cursor:pointer}
 .filebtn:focus-within{outline:2px solid var(--link); outline-offset:2px}
@@ -479,6 +505,11 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 #job{position:fixed; z-index:35; left:50%; transform:translateX(-50%); top:calc(10px + env(safe-area-inset-top, 0px)); background:#123d45; color:#fff; padding:8px 8px 8px 14px; border-radius:999px; display:flex; gap:10px; align-items:center; font-size:14px; max-width:calc(100vw - 32px); box-shadow:0 6px 18px rgba(0,0,0,.25)}
 #job span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
 #job button{background:#e05561; color:#fff; border:0; border-radius:999px; padding:4px 12px; font-weight:600; flex:none}
+/* Thanh #job hiện: chừa một dải trên cùng trang (lớp jobon trên <html>) để thanh không che nút ‹ tên truyện, tên truyện
+   hay thanh đầu tủ truyện / trang truyện. Dải cùng màu đầu trang đọc (hoặc nền tối của tủ / trang truyện). */
+:root.jobon{padding-top:calc(60px + env(safe-area-inset-top, 0px)); background:var(--head)}
+:root.jobon[data-view="lib"],:root.jobon[data-view="toc"]{background:var(--dk-bg)}
+:root.jobon body,:root.jobon .dk{min-height:calc(100vh - 60px - env(safe-area-inset-top, 0px))}
 </style>
 </head>
 <body>
@@ -545,7 +576,7 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
           </ol>
           <div class="row">
             <button class="obtn" id="bAdd2"><svg class="i"><use href="#i-plus"/></svg>Thêm truyện</button>
-            <button class="dbtn" id="bSample">Thử với đoạn mẫu (Tam Quốc Diễn Nghĩa, hồi 1)</button>
+            <button class="dbtn" id="bSample">Thử với đoạn mẫu <span class="smp">(Tam Quốc Diễn Nghĩa, hồi 1)</span></button>
           </div>
         </div>
       </section>
@@ -1884,6 +1915,7 @@ function show(view){
   $('#viewToc').hidden = view !== 'toc';
   $('#viewRead').hidden = view !== 'read';
   $('#gear').hidden = view !== 'read';
+  $('#gear').classList.remove('away');
   $('#panel').hidden = true;
   $('#viewToc').classList.toggle('pre', !!S.pre);
   $('#viewRead').classList.toggle('pre', !!S.pre);
@@ -1910,7 +1942,8 @@ function setMenu(open){
 /* ================= library ================= */
 // Một ô trong lưới tủ truyện: bìa, vạch tiến độ (nếu đang đọc), tên (tối đa 2 dòng), dòng phụ
 function tileHTML(attr, cover, title, sub, prog){
-  const w = prog == null ? '' : '<span class="pg"><i style="width:' + Math.max(2, Math.min(100, Number(prog) || 0)).toFixed(1) + '%"></i></span>';
+  // Tỉ lệ thật; phần đã đọc quá ngắn thì CSS giữ tối thiểu 8px (.pg i min-width)
+  const w = prog == null ? '' : '<span class="pg"><i style="width:' + Math.max(0, Math.min(100, Number(prog) || 0)).toFixed(2) + '%"></i></span>';
   return '<button class="tile" ' + attr + '><span class="cvbox">' + cover + w + '</span><span class="tt">' + esc(title) + '</span><span class="ta">' + esc(sub) + '</span></button>';
 }
 // Bản rút gọn các truyện trong tủ, giữ trong bộ nhớ: về tủ không phải đọc lại mọi bản ghi (kèm cả danh sách tiêu đề chương).
@@ -2091,7 +2124,12 @@ async function splitChapters(text){
    ((顶点小说 www.23us.com)), và chữ chèn kiểu [醉][露][网]. Chữ điều hướng (上一章, 下一页…) chỉ bỏ khi đứng thành dòng riêng.
    Đường link, email, tên miền nằm giữa câu mà không trong ngoặc thì giữ nguyên (có thể là chữ của truyện). Chữ toàn khổ
    (ｗｗｗ．ｘｘ．ｃｏｍ) được dò như chữ thường. Mọi chỗ cắt đều được ghi lại để xem. */
-const JUNK_DEF = ['上一章','下一章','上一页','下一页','返回目录','返回书页','加入书签','投推荐票','求推荐票','求月票','求收藏','本章完','章节报错','天才一秒记住','手机阅读','最新章节','请记住本书','首发域名','笔趣阁','本书首发','最快更新','无弹窗','免费阅读','未完待续','手机用户请浏览','更优质的阅读体验','阅读体验更好','记住网址','本站地址'];
+// Chuỗi nào có chữ khác nhau giữa giản thể và phồn thể thì có thêm bản phồn thể ngay sau (file Big5 / web Đài Loan, Hồng Kông)
+const JUNK_DEF = ['上一章','下一章','上一页','上一頁','下一页','下一頁','返回目录','返回目錄','返回书页','返回書頁','加入书签','加入書籤',
+  '投推荐票','投推薦票','求推荐票','求推薦票','求月票','求收藏','本章完','章节报错','章節報錯','天才一秒记住','天才一秒記住','手机阅读','手機閱讀',
+  '最新章节','最新章節','请记住本书','請記住本書','首发域名','首發域名','笔趣阁','筆趣閣','顶点小说','頂點小說','本书首发','本書首發','最快更新',
+  '无弹窗','無彈窗','免费阅读','免費閱讀','未完待续','未完待續','手机用户请浏览','手機用戶請瀏覽','更优质的阅读体验','更優質的閱讀體驗',
+  '阅读体验更好','閱讀體驗更好','记住网址','記住網址','本站地址'];
 const JUNK = { list:null, re:null, ver:0 };
 const cleanJunkList = a => [...new Set((Array.isArray(a) ? a : []).filter(isStr).map(s => s.trim().slice(0, 100)).filter(Boolean))].slice(0, 500);
 async function junkList(){
@@ -2105,7 +2143,7 @@ function setJunk(list){ JUNK.list = list; JUNK.re = null; JUNK.ver++; }
 const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const URL_CH = "[A-Za-z0-9._~:/?#@!$&'*+,;=%-]";
 // Chữ điều hướng của web: chỉ dùng để xét cả dòng. Nằm giữa câu thì giữ (truyện hệ thống hay viết 他点开了【下一页】).
-const NAV_W = new Set(['上一章','下一章','上一页','下一页','返回目录','返回书页','加入书签']);
+const NAV_W = new Set(['上一章','下一章','上一页','上一頁','下一页','下一頁','返回目录','返回目錄','返回书页','返回書頁','加入书签','加入書籤']);
 function junkRules(list){
   // Chuỗi toàn ký tự ASCII (như "www.", "biquge") thì tính luôn phần tên miền / đường dẫn dính liền
   const litOf = s => /^[\x21-\x7e]+$/.test(s) ? '[A-Za-z0-9.-]{0,30}' + reEsc(s) + URL_CH + '{0,200}' : reEsc(s);
@@ -3959,7 +3997,20 @@ function updateClaudeUI(){
   if (off && !JOB.running) $('#tState').textContent = 'Claude dịch chỉ chạy khi mở trang này trên claude.ai và đã đăng nhập.';
   $('#tStart').textContent = JOB.running ? 'Dừng' : 'Bắt đầu dịch';
   $('#job').hidden = !JOB.running;
+  jobSpace(JOB.running);
   if (JOB.running) $('#jobTxt').textContent = JOB.label;
+}
+// Thanh #job cố định ở đỉnh: lúc hiện thì thêm lớp jobon (chừa dải trên cùng, xem CSS). Đang cuộn giữa trang thì bù độ cuộn
+// để chữ đang đọc không nhảy theo dải đó; tắt neo cuộn của trình duyệt trong lúc này để không bị bù hai lần.
+function jobSpace(on){
+  const r = document.documentElement;
+  if (r.classList.contains('jobon') === on) return;
+  const a = scrollY > 0 ? document.elementFromPoint(innerWidth >> 1, innerHeight >> 1) : null;
+  const ok = !!a && !a.closest('.modal,#job,#toast,#gear,#panel,#popup'), t0 = ok ? a.getBoundingClientRect().top : 0;
+  r.style.overflowAnchor = 'none';
+  r.classList.toggle('jobon', on);
+  if (ok){ const d = a.getBoundingClientRect().top - t0; if (Math.abs(d) >= 1) window.scrollBy(0, d); }
+  requestAnimationFrame(() => requestAnimationFrame(() => { r.style.overflowAnchor = ''; }));
 }
 function setNote(msg, err){ const n = $('#cNote'); n.textContent = msg || ''; n.classList.toggle('err', !!err); }
 
@@ -4605,6 +4656,18 @@ $('#swBg').innerHTML = BG_SW.map(c => '<button data-c="' + c + '" style="backgro
 $('#swFg').innerHTML = FG_SW.map(c => '<button data-c="' + c + '" style="background:#fafafa;color:' + c + ';' + (lum(c) > .8 ? 'background:#555;' : '') + '" aria-label="Chữ ' + c + '">A</button>').join('');
 $('#cFont').innerHTML = Object.keys(FONTS).map(f => '<option>' + f + '</option>').join('');
 $('#gear').addEventListener('click', () => { const p = $('#panel'); p.hidden = !p.hidden; $('#gear').setAttribute('aria-expanded', String(!p.hidden)); closePopup(); });
+// Màn hẹp (≤ 500px): cuộn xuống để đọc thì nút bánh răng lùi xuống dưới mép (không che cuối dòng chữ); cuộn lên một chút,
+// về gần đầu trang hoặc tới cuối chương thì hiện lại. Bảng cài đặt đang mở thì giữ nguyên.
+const GEAR = { y:0 };
+const gearNarrow = () => { try{ return matchMedia('(max-width:500px)').matches; }catch(e){ return false; } };
+window.addEventListener('scroll', () => {
+  const g = $('#gear'), y = Math.max(0, window.scrollY), d = y - GEAR.y;
+  if (S.view !== 'read' || !$('#panel').hidden || !gearNarrow()){ GEAR.y = y; g.classList.remove('away'); return; }
+  if (Math.abs(d) < 12) return;   // rung nhẹ khi cuộn: bỏ qua
+  GEAR.y = y;
+  const end = y + window.innerHeight >= document.documentElement.scrollHeight - 80;
+  g.classList.toggle('away', d > 0 && y > 120 && !end);
+}, { passive:true });
 $('#swBg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ST.bg = b.dataset.c; ST.fg = null; applySettings(); });
 $('#swFg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ST.fg = b.dataset.c; applySettings(); });
 $('#cBg').addEventListener('input', e => { ST.bg = e.target.value; applySettings(); });
