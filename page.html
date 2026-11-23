@@ -399,7 +399,6 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 .nrow input{padding:7px 8px; border:1px solid var(--line); border-radius:5px; background:var(--card); min-width:0; width:100%}
 .nrow button{background:none; border:0; color:var(--danger); padding:0; min-width:44px; min-height:44px; border-radius:6px; font-size:16px}
 .nrow button:hover{background:color-mix(in srgb, var(--danger) 12%, transparent)}
-#mName{z-index:55}   /* mở từ thẻ Gợi ý: nằm trên khung Quản lý name */
 .gpane{display:grid; gap:12px; min-width:0}
 /* thẻ Gợi ý name */
 .sscope{display:flex; width:100%}
@@ -952,22 +951,24 @@ const DB = (() => {
       if (res === 'ok') libTouch(id, rec);
       return res;
     },
-    // Lưu bản Claude dịch của chương idx, chỉ khi truyện còn VÀ nguyên văn chương vẫn đúng là zh (chữ đã gửi đi dịch).
+    // Lưu bản Claude dịch của chương idx, chỉ khi truyện còn VÀ nguyên văn chương vẫn đúng là zh (chữ đã gửi đi dịch)
+    // và tên chương vẫn là zt (không truyền zt thì không kiểm tên chương).
     // Truyện vừa bị xóa hoặc chương vừa bị thay (khôi phục ghi đè) thì không ghi gì, trả về false.
     // full = true: bản đầy đủ (ghi trans, xóa bản dở trong cùng giao dịch); false: bản dịch dở (kv tp:…).
-    async saveTrans(id, idx, zh, rec, full){
+    async saveTrans(id, idx, zh, rec, full, zt){
       const k = ck(id, idx), pk = tpk(id, idx);
+      const same = c => isObj(c) && c.zh === zh && (zt === undefined || (c.zhTitle || '') === zt);
       const d = await open();
       if (!d){
         const c = mem.chapters.get(k);
-        if (!mem.books.has(id) || !isObj(c) || c.zh !== zh) return false;
+        if (!mem.books.has(id) || !same(c)) return false;
         if (full){ mem.trans.set(k, rec); mem.kv.delete(pk); } else mem.kv.set(pk, rec);
         return true;
       }
       const t = d.transaction(['books', 'chapters', 'trans', 'kv'], 'readwrite');
       let ok = false, left = 2, n = 0, c = null, err = null;
       const fin = () => {
-        if (!(n > 0 && isObj(c) && c.zh === zh)) return;
+        if (!(n > 0 && same(c))) return;
         try{
           if (full){ t.objectStore('trans').put(rec, k); t.objectStore('kv').delete(pk); }
           else t.objectStore('kv').put(rec, pk);
@@ -979,6 +980,43 @@ const DB = (() => {
       qc.onsuccess = () => { c = qc.result; if (--left === 0) fin(); };
       try{ await txDone(t); }catch(e){ throw err || e; }
       return ok;
+    },
+    // Mở chương idx của truyện id: thêm idx vào danh sách chương đã đọc (kv "read:<id>"; chưa có thì bắt đầu từ seed) và ghi
+    // lastRead, updatedAt = at, readN (đếm theo danh sách mới nhất) vào bản ghi truyện, trong CÙNG một giao dịch: tab khác
+    // vừa đọc thêm chương thì số chương đã đọc vẫn khớp danh sách (không lấy theo bản tab này nhớ). Truyện không còn thì không ghi gì.
+    // Trả về { read: danh sách mới nhất, book: bản ghi truyện vừa ghi } hoặc null.
+    async markOpen(id, idx, seed, at){
+      const rk = 'read:' + id;
+      const step = (cur, x) => {
+        if (!isObj(x)) return null;
+        const base = cur === undefined ? seed : cleanRanges(cur, Infinity), has = cur !== undefined && rngHas(base, idx);
+        const read = has ? base : rngAdd(base, idx);
+        x.lastRead = idx; x.updatedAt = at; x.readN = rngCount(read, isNat(x.count) ? x.count : 0);
+        return { read, book:x, has };
+      };
+      const d = await open();
+      if (!d){
+        const r = step(clone(mem.kv.get(rk)), clone(mem.books.get(id)));
+        if (!r) return null;
+        if (!r.has) mem.kv.set(rk, r.read);
+        mem.books.set(id, r.book); libTouch(id, r.book);
+        return r;
+      }
+      const t = d.transaction(['kv', 'books'], 'readwrite');
+      let r = null, err = null, left = 2, cur, x;
+      const fin = () => {
+        try{
+          r = step(cur, x); if (!r) return;
+          if (!r.has) t.objectStore('kv').put(r.read, rk);
+          t.objectStore('books').put(r.book, id);
+        }catch(e){ err = e; r = null; try{ t.abort(); }catch(e2){} }
+      };
+      const qr = t.objectStore('kv').get(rk), qb = t.objectStore('books').get(id);
+      qr.onsuccess = () => { cur = qr.result; if (--left === 0) fin(); };
+      qb.onsuccess = () => { x = qb.result; if (--left === 0) fin(); };
+      try{ await txDone(t); }catch(e){ throw err || e; }
+      if (r) libTouch(id, r.book);
+      return r;
     },
     // Ghi s/k = v chỉ khi gs/gk còn tồn tại (ví dụ: chỉ lưu bản dịch nếu truyện chưa bị xóa)
     async putIf(s, k, v, gs, gk){
@@ -1472,17 +1510,21 @@ function render(tokens, html){
 const convertPlain = zh => render(tokenize(zh), false);
 const hanViet = zh => [...zh].map(c => isHan(c) ? (D.hv.get(c) ?? c) : c).join(' ').replace(/\s+/g, ' ').trim();
 
+// Số chương viết bằng chữ Hán, số Ả Rập (cả số toàn khổ ２), hoặc trộn số Ả Rập với đơn vị Hán (2萬 = 20000, 1万2千 = 12000)
 function cnToNum(s){
+  s = String(s).normalize('NFKC');
   if (/^\d+$/.test(s)) return +s;
   // Nhận cả chữ phồn thể 兩 (hai) và 萬 (vạn)
   const d = {零:0,〇:0,一:1,二:2,两:2,兩:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9};
-  if (!/[十百千万萬]/.test(s)) return +[...s].map(c => d[c] ?? '').join('') || 0;
+  if (!/[十百千万萬]/.test(s)) return +[...s].map(c => c >= '0' && c <= '9' ? c : d[c] ?? '').join('') || 0;
   const u = {十:10,百:100,千:1000};
-  let total = 0, sec = 0, num = 0;
+  let total = 0, sec = 0, num = 0, dig = false;   // dig: đang đọc một dãy chữ số Ả Rập (10万 = 10 vạn)
   for (const c of s){
+    if (c >= '0' && c <= '9'){ num = (dig ? num * 10 : 0) + +c; dig = true; continue; }
+    dig = false;
     if (c in d) num = d[c];
     else if (c in u){ sec += (num || 1) * u[c]; num = 0; }
-    else if (c === '万' || c === '萬'){ total += (sec + num) * 10000; sec = 0; num = 0; }
+    else if (c === '万' || c === '萬'){ total += ((sec + num) || 1) * 10000; sec = 0; num = 0; }
   }
   return total + sec + num;
 }
@@ -1493,14 +1535,18 @@ const VOL_RE = new RegExp('^第\\s*([' + CN_NUM + ']+)\\s*([卷部集篇])\\s*[:
 const UNIT = {章:'Chương',节:'Tiết',節:'Tiết',回:'Hồi',卷:'Quyển',部:'Phần',集:'Tập',篇:'Thiên'};
 // Dòng mở đầu trước chương 1 (序章 / 楔子…): hiện là "Mở đầu" (题记 là "Đề từ"), không dịch từng chữ (楔子 không phải "cái chêm")
 const PRO_W = '序章|序言|序幕|序|楔子|引子|引言|前言|题记|題記|开篇|開篇';
-const PRO_T = new RegExp('^(' + PRO_W + ')(?=$|[\\s\\p{P}\\p{S}])[\\s:：、.．·\\-—]*(.*)$', 'u');
+// Các từ trên mà có hai chữ trở lên (bỏ 序: 序列… không phải mở đầu) còn được viết liền một tên ngắn: 序章黎明, 楔子血月
+// (tối đa 20 chữ, không có dấu câu ngắt câu)
+const PRO_W2 = '序章|序言|序幕|楔子|引子|引言|前言|题记|題記|开篇|開篇';
+const PRO_GLUE = '[^\\n\\s\\p{P}\\p{S}][^\\n。！？!?，,；;]{0,19}';
+const PRO_T = new RegExp('^(?:(' + PRO_W + ')(?=$|[\\s\\p{P}\\p{S}])|(' + PRO_W2 + ')(?=' + PRO_GLUE + '$))[\\s:：、.．·\\-—]*(.*)$', 'u');
 const cvPart = s => { s = s.trim(); return s && hasHan(s) ? convertPlain(s) : s; };
 function chapterTitle(zhTitle, idx){
   const z = String(zhTitle || '').trim();
   if (!z) return 'Chương ' + (idx + 1);
   const n = z.normalize('NFKC');
   let m = n.match(PRO_T);
-  if (m){ const rest = cvPart(m[2]); return (m[1] === '题记' || m[1] === '題記' ? 'Đề từ' : 'Mở đầu') + (rest ? ': ' + rest : ''); }
+  if (m){ const w = m[1] || m[2], rest = cvPart(m[3]); return (w === '题记' || w === '題記' ? 'Đề từ' : 'Mở đầu') + (rest ? ': ' + rest : ''); }
   m = n.match(CH_RE);
   if (m){
     const pre = m[1].trim(), rest = cvPart(m[4]);
@@ -1707,10 +1753,12 @@ const onClose = {};   // id modal → hàm chạy khi modal đóng (bấm ×, H�
 // Dải thông báo (#toast: nút Hoàn tác) và thanh đang dịch (#job: nút Dừng) không bị khóa.
 const MST = [], OPENER = {};
 const INERT_IDS = ['viewLib', 'viewToc', 'viewRead', 'popup', 'gear', 'panel', 'memBanner', 'dbWait'];
+// Hộp mở sau nằm trên (z-index theo thứ tự trong MST, từ 50), chỉ hộp trên cùng bấm được. Không dùng z-index cố định cho từng hộp:
+// hộp Khôi phục hiện ra khi Chỉnh name đang mở thì vẫn nằm trên, không bị hộp dưới (đang bị khóa) che mất.
 function setInert(){
   const top = MST[MST.length - 1] || null;
   INERT_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.inert = !!top; });
-  $$('.modal').forEach(m => { m.inert = !!top && m.id !== top; });
+  $$('.modal').forEach(m => { m.inert = !!top && m.id !== top; const i = MST.indexOf(m.id); m.style.zIndex = i < 0 ? '' : String(50 + i); });
 }
 // Tiêu điểm vào cả khung hộp thoại (không vào ô nhập đầu tiên, để điện thoại không tự bật bàn phím)
 function focusSheet(id){ const m = $('#' + id), s = m && $('.sheet', m); if (s && !m.hidden) try{ s.focus({ preventScroll:true }); }catch(e){} }
@@ -1936,7 +1984,8 @@ async function drawLib(){
 // Từ điển / name / danh sách truyện vừa đổi khi đang ở tủ truyện: vẽ lại tại chỗ (chỉ các ô có thay đổi), không đóng menu, không cuộn
 const refreshLib = () => { if (S.view === 'lib') return drawLib(); updateDictStat(); return Promise.resolve(); };
 const pct = f => Math.min(100, Math.max(0, Math.round(f * 100))) + '%';
-const DR = { busy:false };   // đang tải lại bộ cài sẵn (retryDicts)
+// busy: đang tải lại bộ cài sẵn (retryDicts); want: có mạng lại (sự kiện online) lúc trang còn đang nạp, nạp xong thì thử lại ngay
+const DR = { busy:false, want:false };
 function updateDictStat(){
   const f = n => n.toLocaleString('vi-VN'), err = D.loaded && D.dictErr, st = $('#dictStat');
   st.textContent = !D.loaded ? 'Đang nạp từ điển… ' + pct(D.prog) : err ? (DR.busy ? 'Đang tải lại từ điển cài sẵn…' : 'Không tải được từ điển cài sẵn (vietphrase.txt, hanviet.txt), nên chữ Hán chưa được convert. Kiểm tra mạng rồi bấm Thử lại.') :
@@ -1963,8 +2012,8 @@ let addMode = 'new';
 // Sau 节 / 回 phải là khoảng trắng, dấu câu hoặc hết dòng, để không nhận nhầm 第三回合… / 第二节课….
 const HEAD_RE = new RegExp('^[ \\t\\u3000]*((?:(?:正文|卷[' + CN_NUM + ']+|第[ \\t]*[' + CN_NUM + ']+[ \\t]*[卷部集篇])[^\\n。！？，,!?]{0,20}?[ \\t\\u3000]*|[^\\n。！？，,!?第]{1,20}?[ \\t\\u3000]+)?' +
   '第[ \\t]*[' + CN_NUM + ']+[ \\t]*(?:章|[节節回](?=$|[\\s\\p{P}\\p{S}]))[^\\n]{0,60})$', 'gmu');
-// Dòng mở đầu đứng trước chương 1: 序章 / 楔子 / 引子 / 题记… (có thể kèm tên ngắn phía sau)
-const PRO_RE = new RegExp('^[ \\t\\u3000]*(?:' + PRO_W + ')(?=$|[\\s\\p{P}\\p{S}])[^\\n]{0,40}$', 'mu');
+// Dòng mở đầu đứng trước chương 1: 序章 / 楔子 / 引子 / 题记… (có thể kèm tên ngắn phía sau, cách ra hoặc viết liền: 序章黎明)
+const PRO_RE = new RegExp('^[ \\t\\u3000]*(?:(?:' + PRO_W + ')(?=$|[\\s\\p{P}\\p{S}])[^\\n]{0,40}|(?:' + PRO_W2 + ')' + PRO_GLUE + ')$', 'mu');
 // Phần trước chương 1 có phải chữ của truyện không: dài, hoặc có dấu hết câu. Chỉ một hai dòng ngắn (tên truyện, tác giả) thì bỏ.
 const keepPre = s => s.length > 40 || /[。！？!?…」”]/.test(s);
 // Văn bản dài mà không có tiêu đề chương: chia thành các "Phần N" khoảng 8.000–10.000 chữ theo ranh giới đoạn
@@ -2337,20 +2386,19 @@ async function loadRead(b){
   S.readHas = r !== undefined;
   S.readR = S.readHas ? cleanRanges(r, Infinity) : rngSeed(b.lastRead);
 }
-// Đánh dấu đã đọc: chỉ thêm chương này vào bản mới nhất trong IndexedDB (không đè dữ liệu tab khác)
+// Mở chương idx: đánh dấu đã đọc và ghi chương đang đọc. Giao diện thấy ngay (S.readR); trong IndexedDB chỉ thêm chương này
+// vào bản mới nhất (không đè dữ liệu tab khác), số chương đã đọc (readN, cho vạch tiến độ ở tủ) đếm theo bản mới nhất đó
+// trong cùng giao dịch. Tab cũ (chưa biết tab khác đọc thêm) mở lại chương đã đọc thì readN không bị tụt.
 function markRead(b, idx){
-  if (S.readHas && rngHas(S.readR, idx)) return;
   const seed = S.readR;
-  S.readR = rngAdd(S.readR, idx); S.readHas = true;
-  DB.update('kv', 'read:' + b.id, cur => {
-    const base = cur === undefined ? seed : cleanRanges(cur, Infinity);
-    return cur !== undefined && rngHas(base, idx) ? undefined : rngAdd(base, idx);
-  }).then(v => {
-    if (!v || !S.book || S.book.id !== b.id) return;
-    S.readR = v;
-    // Tab khác cũng vừa đọc thêm chương: sửa lại số chương đã đọc trong bản ghi truyện
-    const n = rngCount(v, b.count);
-    if (n !== b.readN){ b.readN = n; DB.update('books', b.id, x => { if (!x) return; x.readN = rngCount(v, isNat(x.count) ? x.count : 0); return x; }).then(x => { if (x) bcast({ t:'prog', id:b.id }); }).catch(() => {}); }
+  if (!(S.readHas && rngHas(S.readR, idx))){ S.readR = rngAdd(S.readR, idx); S.readHas = true; }
+  b.lastRead = idx; b.updatedAt = Date.now(); b.readN = rngCount(S.readR, b.count);
+  DB.markOpen(b.id, idx, seed, b.updatedAt).then(r => {
+    if (!r) return;
+    if (S.book && S.book.id === b.id){ S.readR = r.read; S.readHas = true; S.book.readN = r.book.readN; }
+    b.readN = r.book.readN;
+    // Báo tab khác (tủ truyện ở đó sửa thứ tự và vạch tiến độ của truyện này)
+    bcast({ t:'prog', id:b.id });
   }).catch(() => {});
 }
 // onlyIf: đọc xong bản ghi mà onlyIf() sai (đã chuyển sang truyện khác) thì thôi, không đổi truyện đang mở
@@ -2723,31 +2771,37 @@ async function loadChapter(idx, restoreScroll){
   clearTimeout(scT);
   const all = LS.get('tc-scroll', {}), sc = isObj(all) && isObj(all[b.id]) ? all[b.id] : null;
   const pos = restoreScroll && sc && sc.idx === idx ? sc : null;
+  // Chỉ ghi phần thay đổi (chương đã đọc, chương đang đọc) lên bản mới nhất trong IndexedDB (tab khác có thể vừa lưu name, đọc thêm chương)
   markRead(b, idx);
   // Từ điển chưa nạp xong thì bản convert chỉ là chữ chờ: nhớ chỗ đọc để cuộn lại khi vẽ xong
   S.wantY = !D.loaded && S.mode === 'cv' && pos ? pos : null;
   renderChapter();
-  b.lastRead = idx; b.updatedAt = Date.now();
-  const rn = b.readN = rngCount(S.readR, b.count);
-  // Chỉ ghi phần thay đổi lên bản mới nhất trong IndexedDB (tab khác có thể vừa lưu name)
-  // Báo tab khác (tủ truyện ở đó sửa thứ tự và vạch tiến độ của truyện này)
-  DB.update('books', b.id, x => { if (!x) return; x.lastRead = idx; x.readN = rn; x.updatedAt = b.updatedAt; return x; }).then(x => { if (x) bcast({ t:'prog', id:b.id }); }).catch(() => {});
   LS.set('tc-last', { view:'read', book:b.id });
   if (pos && !S.wantY) restorePos(pos); else { RP.n++; window.scrollTo(0, 0); }
   LCshown = my;
 }
 /* ---------- chỗ đọc theo đoạn ----------
    Lưu { idx, y, p, f, n }: p = đoạn đầu tiên đang thấy ở mép trên màn hình, f = phần đoạn đó đã cuộn qua (0–1),
-   n = số đoạn của bản đang hiện (trường mới, tùy chọn). Cỡ chữ, font hay bề ngang đổi thì vẫn về đúng đoạn.
+   n = số đoạn của bản đang hiện (trường mới, tùy chọn; bản dịch dở tính theo cả chương, xem shownN). Cỡ chữ, font hay bề ngang đổi thì vẫn về đúng đoạn.
    Mở bằng bản có số đoạn khác (bản convert ↔ bản Claude dịch) thì lấy đoạn theo tỉ lệ. Dữ liệu cũ chỉ có y (pixel) thì cuộn theo y. */
 const RP = { n:0 };
 const readParas = () => $$('#rText > p:not(.muted)');
 // Khung đọc đang có chữ thật để nhớ chỗ: không phải khung thông báo / chờ, không phải bản Claude đang dịch dần
 const realText = () => readParas().length > 0 && !(S.mode === 'cl' && jobHere() && S.streaming != null);
+// Số đoạn quy đổi của bản đang hiện. Bản Claude dịch dở (mới xong zhDone / zhTotal đoạn nguyên văn) được tính như một bản đủ
+// có số đoạn bằng cả chương, để đổi sang bản convert (và ngược lại) về đúng đoạn, không lấy tỉ lệ theo số đoạn của phần đã dịch.
+function shownN(ps){
+  const t = S.tpart;
+  if (!S.pre && S.mode === 'cl' && !S.trans && t && t.partial && !(jobHere() && S.streaming != null)){
+    const d = t.partial.zhDone, z = t.partial.zhTotal;
+    if (isNat(d) && d > 0 && isNat(z) && z >= d) return Math.max(ps.length, Math.round(ps.length * z / d));
+  }
+  return ps.length;
+}
 function posRec(){
   const rec = { idx:S.idx, y:Math.round(window.scrollY) };
   const ps = readParas(); if (!ps.length) return rec;
-  rec.n = ps.length;
+  rec.n = shownN(ps);
   let lo = 0, hi = ps.length - 1, k = ps.length - 1;
   while (lo <= hi){ const m = (lo + hi) >> 1; if (ps[m].getBoundingClientRect().bottom > 0){ k = m; hi = m - 1; } else lo = m + 1; }
   const r = ps[k].getBoundingClientRect();
@@ -2756,7 +2810,7 @@ function posRec(){
 }
 function posTarget(pos){
   if (isNat(pos.p) && isNum(pos.f) && (pos.p > 0 || pos.f > 0)){
-    const ps = readParas(), k = isNat(pos.n) && pos.n > 0 && pos.n !== ps.length ? Math.round(pos.p * ps.length / pos.n) : pos.p;
+    const ps = readParas(), cur = shownN(ps), k = isNat(pos.n) && pos.n > 0 && pos.n !== cur ? Math.round(pos.p * cur / pos.n) : pos.p;
     const el = ps[Math.min(k, ps.length - 1)];
     if (el){ const r = el.getBoundingClientRect(); return r.top + window.scrollY + Math.max(0, Math.min(1, pos.f)) * r.height; }
   }
@@ -3726,8 +3780,15 @@ function importNames(scope, set){
   return p;
 }
 // Names.txt: mỗi dòng 中文=name, lấy nghĩa đầu tiên không rỗng ("=/Lâm Động" thành "Lâm Động").
-// Định dạng này không có cách viết "/" trong name, nên name có "/" (HP/MP) xuất ra rồi nhập lại chỉ còn phần trước dấu "/".
-const namesFromTxt = txt => { const m = new Map(), set = {}; parseDict(txt, m); m.forEach((v, k) => { set[k] = v.split('/').map(x => x.trim()).find(Boolean) || v; }); return set; };
+// File do Thư Các xuất có dòng đầu NAMES_HDR (không có dấu "=", trình đọc Names.txt khác bỏ qua): giữ nguyên từng name như đã lưu,
+// để name có "/" (HP/MP, "/…" là bỏ chữ) xuất ra rồi nhập lại không đổi. File không có dòng này (file ngoài, file xuất trước đây) đọc như cũ.
+const NAMES_HDR = '# Thu Cac Names v1';
+const namesFromTxt = txt => {
+  const m = new Map(), set = {}, raw = (String(txt).replace(/^﻿/, '').split(/\r?\n/, 1)[0] || '').trim() === NAMES_HDR;
+  parseDict(txt, m);
+  m.forEach((v, k) => { set[k] = raw ? v : v.split('/').map(x => x.trim()).find(Boolean) || v; });
+  return set;
+};
 $('#gImport').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
   e.target.value = '';
@@ -3744,7 +3805,7 @@ $('#gExport').addEventListener('click', () => {
   const txt = [...mgrMap().entries()].map(([k, v]) => k + '=' + v).join('\r\n');
   if (!txt){ toast('Chưa có name để xuất.'); return; }
   const fn = mgrTab === 'book' ? 'Names - ' + bookTitle(S.book).replace(/[\\/:*?"<>|]/g, '') + '.txt' : 'Names.txt';
-  saveFile(fn, txt);
+  saveFile(fn, NAMES_HDR + '\r\n' + txt);
 });
 
 /* ---------- dictionary manager ---------- */
@@ -3803,7 +3864,7 @@ async function retryDicts(){
   if (D.dictErr) toast('Vẫn chưa tải được từ điển cài sẵn. Kiểm tra mạng rồi bấm Thử lại.', 6000);
   else toast('Đã tải xong từ điển.');
 }
-window.addEventListener('online', () => { if (D.dictErr) retryDicts(); });
+window.addEventListener('online', () => { if (!D.loaded){ DR.want = true; return; } if (D.dictErr) retryDicts(); });
 $('#dRows').addEventListener('click', e => { if (e.target.closest('[data-dict-retry]')) retryDicts(); });
 $('#dictRetry').addEventListener('click', () => retryDicts());
 $('#dRows').addEventListener('change', async e => {
@@ -3952,10 +4013,12 @@ const noPartial = e => !!e && (e.code === 'chap_changed' || e.code === 'book_gon
 // Mọi lần ghi đều kiểm nguyên văn chương vẫn đúng là chữ đã gửi đi dịch (DB.saveTrans), nên khôi phục ghi đè giữa chừng
 // không làm bản dịch của chữ cũ dính vào chữ mới.
 // Câu trả lời của Claude bị cắt (truncated) mà phần gửi đi có nhiều đoạn: bỏ câu trả lời đó, chia đôi phần rồi dịch lại từng nửa.
+// Phần chỉ có một đoạn (từ 200 chữ) mà vẫn bị cắt: cắt đoạn đó ở dấu hết câu thành các mảnh nhỏ (sub), dịch từng mảnh rồi nối
+// bản dịch các mảnh thành một đoạn. Bản dở chỉ được lưu ở ranh giới đoạn (không lưu khi một đoạn mới dịch xong vài mảnh).
 async function translateChapter(b, idx, ctl, labelPrefix, fresh){
   const ch = await DB.get('chapters', ck(b.id, idx));
   if (!ch || !isStr(ch.zh)) return false;
-  const zh0 = ch.zh, paras = transParas(zh0);
+  const zh0 = ch.zh, zt0 = ch.zhTitle || '', paras = transParas(zh0);
   const old = fresh ? null : await DB.get('kv', tpk(b.id, idx));
   const resume = okTrans(old) && old.partial && isNat(old.partial.zhDone) && old.partial.zhDone < paras.length && old.partial.zhTotal === paras.length ? old : null;
   const start = resume ? resume.partial.zhDone : 0;
@@ -3965,7 +4028,9 @@ async function translateChapter(b, idx, ctl, labelPrefix, fresh){
   const gloss = glossary((ch.zhTitle || '') + '\n' + ch.zh, b.names || {});
   const withTitle = !resume && !!(ch.zhTitle && hasHan(ch.zhTitle));
   let done = resume ? resume.text.split('\n').filter(Boolean) : [], title = resume ? (resume.title || '') : '', truncated = resume ? !!resume.truncated : false;
-  let zhDone = start, k = 0;
+  // pend: bản dịch các mảnh đã xong của đoạn đang dịch dở (chưa tính vào done / zhDone)
+  let zhDone = start, k = 0, pend = [];
+  const doneNow = () => pend.length ? done.concat([pend.join(' ')]) : done;
   // Bản dịch dở sau n phần đã xong (theo danh sách phần hiện tại)
   const partRec = n => ({ title, text:done.join('\n'), at:Date.now(), tier:ST.tier, truncated, partial:{ part:before + n, parts, zhDone, zhTotal:paras.length } });
   JOB.idx = idx; JOB.bookId = b.id;
@@ -3975,14 +4040,14 @@ async function translateChapter(b, idx, ctl, labelPrefix, fresh){
       JOB.label = labelPrefix + (parts > 1 ? ' · phần ' + (before + k + 1) + '/' + parts : '');
       updateClaudeUI();
       const isFirst = k === 0 && withTitle;
-      const prompt = buildPrompt({ text:chunks[k].join('\n\n'), withTitle:isFirst, zhTitle:ch.zhTitle, book:bookTitle(b), notes:b.notes, gloss, prev:done.slice(-2).join('\n\n'), part:before + k + 1, parts });
-      S.streaming = { title, paras:done.slice() };
+      const prompt = buildPrompt({ text:chunks[k].join('\n\n'), withTitle:isFirst, zhTitle:ch.zhTitle, book:bookTitle(b), notes:b.notes, gloss, prev:doneNow().slice(-2).join('\n\n'), part:before + k + 1, parts });
+      S.streaming = { title, paras:doneNow().slice() };
       if (live()) drawStream(S.streaming);
       const res = await sample(prompt, {
         signal:ctl.signal, modelTier:ST.tier, cache:false,
         onText: ({ text }) => {
           const r = parseOut(text, isFirst);
-          S.streaming = { title:isFirst ? r.title : title, paras:done.concat(r.paras) };
+          S.streaming = { title:isFirst ? r.title : title, paras:doneNow().concat(r.paras) };
           if (live()) drawStream(S.streaming);
         }
       });
@@ -3991,33 +4056,50 @@ async function translateChapter(b, idx, ctl, labelPrefix, fresh){
         chunks.splice(k, 1, c.slice(0, h), c.slice(h)); parts++; k--;
         continue;
       }
+      const c = chunks[k];
+      if (res.truncated && c[0].length >= 200){
+        // Mảnh tối đa 60% đoạn: thường ra hai mảnh (cắt ở dấu hết câu gần nhất phía trước), không thừa một mẩu cuối rất ngắn như khi lấy đúng một nửa
+        const pcs = splitLong(c[0], Math.ceil(c[0].length * .6));
+        if (pcs.length > 1){
+          // end: mảnh cuối của đoạn (mảnh bị cắt tiếp thì mảnh cuối của nó nhận cờ end)
+          const end = c.sub ? c.end : true;
+          chunks.splice(k, 1, ...pcs.map((p, i) => Object.assign([p], { sub:true, end:end && i === pcs.length - 1 })));
+          parts += pcs.length - 1; k--;
+          continue;
+        }
+      }
       const r = parseOut(res.text, isFirst);
       if (isFirst) title = r.title;
-      done = done.concat(r.paras);
-      zhDone += chunks[k].length;
-      if (res.truncated) truncated = true;   // phần chỉ có một đoạn mà vẫn bị cắt: giữ, ghi chú để Dịch lại
-      if (k < chunks.length - 1){
+      if (c.sub){
+        pend.push(r.paras.join(' '));
+        if (c.end){ done = done.concat([pend.join(' ')]); pend = []; zhDone += 1; }
+      } else { done = done.concat(r.paras); zhDone += c.length; }
+      if (res.truncated) truncated = true;   // mảnh ngắn mà vẫn bị cắt: giữ, ghi chú để Dịch lại
+      if (k < chunks.length - 1 && !pend.length){
         let saved = null;
-        try{ saved = await DB.saveTrans(b.id, idx, zh0, partRec(k + 1), false); }catch(e2){}   // ghi lỗi (máy hết chỗ…): cứ dịch tiếp
+        try{ saved = await DB.saveTrans(b.id, idx, zh0, partRec(k + 1), false, zt0); }catch(e2){}   // ghi lỗi (máy hết chỗ…): cứ dịch tiếp
         if (saved === false) throw await lostErr(b.id);
         if (saved && S.book && S.book.id === b.id) S.partSet.add(idx);
       }
     }
   }catch(e){
-    if (k > 0 && JOB.dead !== b.id && !noPartial(e)){
-      const rec = partRec(k);
+    // Truyện vừa bị xóa, hoặc vừa bị thay khi khôi phục ghi đè (ở tab này hoặc tab khác, kể cả khi nguyên văn y hệt):
+    // không lưu lại bản dở (bước ghi đè đã xóa bản dở cũ, lưu lại thì bản dịch trong file bị thay khi bấm Dịch tiếp)
+    const gone = JOB.dead === b.id || JOB.over === b.id || noPartial(e);
+    if (!gone && zhDone > start){
+      const rec = partRec(k - pend.length);
       try{
-        if (await DB.saveTrans(b.id, idx, zh0, rec, false)){
+        if (await DB.saveTrans(b.id, idx, zh0, rec, false, zt0)){
           e.partial = rec.partial;
           if (S.book && S.book.id === b.id){ S.partSet.add(idx); if (S.idx === idx) S.tpart = rec; }
         }
       }catch(e2){}
-    } else if (resume && !noPartial(e)) e.partial = resume.partial;
+    } else if (resume && !gone) e.partial = resume.partial;
     throw e;
   }
   const rec = { title:title || chapterTitle(ch.zhTitle, idx), text:done.join('\n'), at:Date.now(), tier:ST.tier, truncated };
   // Ghi bản đầy đủ và xóa bản dở trong cùng một giao dịch, chỉ khi truyện còn và nguyên văn chưa bị thay
-  if (!await DB.saveTrans(b.id, idx, zh0, rec, true)) throw await lostErr(b.id);
+  if (!await DB.saveTrans(b.id, idx, zh0, rec, true, zt0)) throw await lostErr(b.id);
   if (S.book && S.book.id === b.id){ S.transSet.add(idx); S.partSet.delete(idx); if (S.idx === idx){ S.trans = rec; S.tpart = null; } }
   return true;
 }
@@ -4341,6 +4423,7 @@ function restoreSummary(s, bad){
   if (s.hole) msg += ', không ghi đè ' + s.hole + ' truyện vì file thiếu chương';
   if (s.names) msg += ', cập nhật ' + s.names + ' name trong kho chung';
   if (s.dict) msg += ', nạp từ điển đã tải lên trong file';
+  if (s.dictKept) msg += ', giữ từ điển vừa tải lên trên máy này (không dùng bản trong file)';
   msg += '.';
   if (s.dictErr) msg += ' Chưa nạp được từ điển trong file, hãy thử khôi phục lại sau.';
   if (bad) msg += ' Bỏ qua ' + bad + ' mục sai định dạng.';
@@ -4372,7 +4455,7 @@ async function restoreBackup(data){
     mode = await askRestore(dup, khoDiff, nHave, nFile, dictDiff, nMiss);
     if (!mode){ toast('Đã hủy khôi phục.'); return; }
   }
-  const sum = { added:0, over:0, kept:0, copied:0, skip:0, hole:0, names:0, dict:0, dictErr:false };
+  const sum = { added:0, over:0, kept:0, copied:0, skip:0, hole:0, names:0, dict:0, dictKept:0, dictErr:false };
   const skipOne = id => { if (nFile(id)) sum.hole++; else sum.skip++; };
   const wrote = new Map();   // id trong file → id đã ghi (bản sao thì là id mới)
   const asCopy = b => { const id = newBookId(); return [id, Object.assign({}, b, { id, viTitle:bookTitle(b) + ' (bản sao)', createdAt:Date.now() })]; };
@@ -4453,18 +4536,27 @@ async function restoreBackup(data){
     let cur; try{ cur = await DB.get('kv', 'junk'); }catch(e){}
     if (cur === undefined || mode === 'over'){ try{ await DB.put('kv', 'junk', R.junk); setJunk(R.junk); }catch(e){} }
   }
-  // Từ điển đã tải lên: làm sau cùng, lỗi ở bước này không ảnh hưởng truyện đã khôi phục
-  const ov = {};
-  for (const k of Object.keys(dictSt)) if (dictSt[k] === 'new' || (dictSt[k] === 'diff' && mode === 'over')) ov[k] = R.dict[k];
-  if (Object.keys(ov).length){
+  // Từ điển đã tải lên: làm sau cùng, lỗi ở bước này không ảnh hưởng truyện đã khôi phục.
+  // 'new' (lúc hỏi máy này chưa có): chỉ ghi nếu lúc ghi vẫn chưa có (kiểm trong giao dịch ghi). Trong lúc hỏi mà tab khác
+  // (hoặc tab này) vừa tải từ điển lên thì giữ bản đó, kể cả khi chọn Ghi đè (hộp hỏi không nhắc mục này), và dựng theo bản đó
+  // để tab này dùng đúng bản đang lưu. 'diff' (máy này có bản khác): chỉ thay khi chọn Ghi đè.
+  const dks = Object.keys(dictSt).filter(k => dictSt[k] === 'new' || (dictSt[k] === 'diff' && mode === 'over'));
+  if (dks.length){
     if (dictBusy || DR.busy) sum.dictErr = true;
     else {
       dictBusy = true;
       try{
         toast('Đang nạp từ điển trong file…', 60000);
-        for (const k of Object.keys(ov)) await DB.put('kv', 'dict:' + k, ov[k]);
-        await buildDicts(null, ov);
-        sum.dict = Object.keys(ov).length;
+        const use = {};
+        let nNew = 0, nKept = 0;
+        for (const k of dks){
+          if (dictSt[k] === 'diff'){ await DB.put('kv', 'dict:' + k, R.dict[k]); use[k] = R.dict[k]; nNew++; continue; }
+          let now = '';
+          const w = await DB.update('kv', 'dict:' + k, cur => { if (isStr(cur) && cur){ now = cur; return undefined; } return R.dict[k]; });
+          if (w !== undefined){ use[k] = R.dict[k]; nNew++; } else { use[k] = now; nKept++; }
+        }
+        await buildDicts(null, use);
+        sum.dict = nNew; sum.dictKept = nKept;
         dictChanged();
       }catch(e){ sum.dictErr = true; }
       finally{ dictBusy = false; }
@@ -4916,7 +5008,12 @@ function afterDicts(){
   PRE_P = loadPreList();
   // Kho name đọc song song với từ điển (không chờ trước khi hiện trang); bản convert chờ cả hai xong
   KHO.p = loadKho();
-  Promise.all([buildDicts(bootProg).catch(() => {}), KHO.p.catch(() => {})]).then(() => { D.loaded = true; D.ver++; dictDone(); afterDicts(); dictErrNote(); bcReplay(); });
+  Promise.all([buildDicts(bootProg).catch(() => {}), KHO.p.catch(() => {})]).then(() => { D.loaded = true; D.ver++; dictDone(); afterDicts();
+    // Mạng có lại trong lúc đang nạp (bộ cài sẵn đã tải lỗi): thử tải lại luôn, khỏi báo lỗi rồi chờ bấm Thử lại
+    const again = DR.want && D.dictErr && !dictBusy && navigator.onLine !== false; DR.want = false;
+    if (again) retryDicts(); else dictErrNote();
+    bcReplay();
+  });
   let shown = false;
   if (want.view !== 'lib') shown = await routeTo(want);
   else if (resume){
